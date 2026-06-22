@@ -36,5 +36,8 @@ Thumbs.db
 # Prisma
 prisma/migrations/dev/
 
+# Embedded PostgreSQL local data
+.brandhub-db/
+
 # Coverage
 coverage/
