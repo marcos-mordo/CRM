@@ -206,7 +206,7 @@ model Contact {
   tasks       Task[]
   emailListMembers EmailListMember[]
   tickets     Ticket[]
-  notes       NoteList[]
+  noteLinks   NoteList[]
   tags        ContactTag[]
 
   @@index([organizationId])
