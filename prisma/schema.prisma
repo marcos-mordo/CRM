@@ -47,6 +47,18 @@ model Organization {
   tags          Tag[]
   notes         Note[]
 
+  // BrandHub: agencia multi-marca
+  brands             Brand[]
+  brandProducts      BrandProduct[]
+  endCustomers       EndCustomer[]
+  sales              Sale[]
+  commissions        Commission[]
+  commissionRules    CommissionRule[]
+  customFields       CustomField[]
+  contractTemplates  ContractTemplate[]
+  repAssignments     RepBrandAssignment[]
+  attachments        Attachment[]
+
   @@index([slug])
 }
 
@@ -85,6 +97,11 @@ model User {
   campaignsCreated Campaign[]
   sessions         Session[]
   accounts         Account[]
+
+  // BrandHub
+  brandAssignments RepBrandAssignment[]
+  salesAsRep       Sale[]               @relation("SaleRepresentative")
+  commissions      Commission[]
 
   @@index([organizationId])
   @@index([email])
@@ -801,4 +818,387 @@ model NoteList {
   contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
 
   @@id([noteId, contactId])
+}
+
+// ============================================
+// BRANDHUB: Agencia multi-marca
+// Una Organization (agencia) representa varias Brand (empresas representadas).
+// Los User con rol AGENT son representantes que venden productos de esas Brand
+// a EndCustomer (clientes finales), generando Sale y Commission.
+// ============================================
+
+enum ProductType {
+  LICENSE              // Licencia de software (antivirus, EDR, etc.)
+  SAAS_SUBSCRIPTION    // Suscripción SaaS mensual/anual
+  AUDIT                // Auditoría puntual de seguridad
+  TRAINING             // Formación / curso
+  HARDWARE             // Equipo físico
+  MANAGED_SERVICE      // Servicio gestionado (SOC, MSSP)
+  SUPPORT              // Contrato de soporte
+  CONSULTANCY          // Consultoría por horas/proyecto
+  CUSTOM               // Genérico
+}
+
+enum BillingFrequency {
+  ONE_TIME
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum CommissionType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  TIERED
+}
+
+enum CommissionRuleScope {
+  AGENCY
+  BRAND
+  PRODUCT
+  REP
+}
+
+enum SaleStatus {
+  DRAFT
+  PENDING_SIGN
+  SIGNED
+  ACTIVE
+  CANCELLED
+  REFUNDED
+}
+
+enum CommissionStatus {
+  PENDING
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum AttachmentType {
+  ID_DOCUMENT
+  PREVIOUS_BILL
+  CONTRACT
+  PHOTO
+  OTHER
+}
+
+enum CustomFieldEntity {
+  BRAND
+  PRODUCT
+  CUSTOMER
+  SALE
+}
+
+enum CustomFieldType {
+  STRING
+  TEXT
+  NUMBER
+  DECIMAL
+  DATE
+  DATETIME
+  BOOLEAN
+  SELECT
+  MULTISELECT
+}
+
+model Brand {
+  id            String   @id @default(cuid())
+  name          String
+  legalName     String?
+  taxId         String?
+  description   String?  @db.Text
+  logo          String?
+  website       String?
+  contactPerson String?
+  contactEmail  String?
+  contactPhone  String?
+  active        Boolean  @default(true)
+  defaultCommissionType  CommissionType @default(PERCENTAGE)
+  defaultCommissionValue Decimal        @default(10) @db.Decimal(10, 2)
+  customFields  Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  products          BrandProduct[]
+  sales             Sale[]
+  repAssignments    RepBrandAssignment[]
+  contractTemplates ContractTemplate[]
+
+  @@unique([organizationId, name])
+  @@index([organizationId])
+}
+
+model BrandProduct {
+  id               String           @id @default(cuid())
+  sku              String
+  name             String
+  description      String?          @db.Text
+  type             ProductType      @default(CUSTOM)
+  billingFrequency BillingFrequency @default(ONE_TIME)
+  basePrice        Decimal          @db.Decimal(15, 2)
+  cost             Decimal?         @db.Decimal(15, 2)
+  taxRate          Decimal          @default(21) @db.Decimal(5, 2)
+  currency         String           @default("EUR")
+  active           Boolean          @default(true)
+  commissionType   CommissionType?
+  commissionValue  Decimal?         @db.Decimal(10, 2)
+  customFields     Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  brandId String
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  saleLines SaleLine[]
+
+  @@unique([brandId, sku])
+  @@index([organizationId])
+  @@index([brandId])
+}
+
+model CommissionRule {
+  id        String              @id @default(cuid())
+  name      String
+  scope     CommissionRuleScope
+  type      CommissionType
+  value     Decimal             @db.Decimal(10, 2)
+  config    Json?
+  brandId   String?
+  productId String?
+  repUserId String?
+  validFrom DateTime?
+  validTo   DateTime?
+  active    Boolean             @default(true)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([scope])
+}
+
+model RepBrandAssignment {
+  id        String   @id @default(cuid())
+  territory String?
+  customCommissionType  CommissionType?
+  customCommissionValue Decimal?        @db.Decimal(10, 2)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  brandId String
+  brand   Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, brandId])
+  @@index([organizationId])
+}
+
+model EndCustomer {
+  id            String   @id @default(cuid())
+  isCompany     Boolean  @default(false)
+  firstName     String?
+  lastName      String?
+  companyName   String?
+  taxId         String?
+  email         String?
+  phone         String?
+  mobile        String?
+  address       String?
+  city          String?
+  postalCode    String?
+  province      String?
+  country       String   @default("España")
+  customFields  Json?
+  gdprConsent      Boolean   @default(false)
+  gdprConsentAt    DateTime?
+  marketingConsent Boolean   @default(false)
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  sales Sale[]
+
+  @@index([organizationId])
+  @@index([taxId])
+  @@index([email])
+}
+
+model Sale {
+  id           String     @id @default(cuid())
+  number       String
+  status       SaleStatus @default(DRAFT)
+  saleDate     DateTime   @default(now())
+  signedAt     DateTime?
+  activatedAt  DateTime?
+  cancelledAt  DateTime?
+  cancelReason String?
+
+  currency        String  @default("EUR")
+  subtotal        Decimal @db.Decimal(15, 2)
+  taxAmount       Decimal @db.Decimal(15, 2)
+  discount        Decimal @default(0) @db.Decimal(15, 2)
+  total           Decimal @db.Decimal(15, 2)
+  totalCommission Decimal @default(0) @db.Decimal(15, 2)
+
+  signatureData   String?  @db.Text
+  signedPdfUrl    String?
+  signatureMethod String?
+
+  notes        String? @db.Text
+  customFields Json?
+
+  clientUuid    String?  @unique
+  syncedAt      DateTime?
+  lastSyncError String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  brandId String
+  brand   Brand  @relation(fields: [brandId], references: [id])
+
+  endCustomerId String
+  endCustomer   EndCustomer @relation(fields: [endCustomerId], references: [id])
+
+  representativeId String
+  representative   User   @relation("SaleRepresentative", fields: [representativeId], references: [id])
+
+  lines       SaleLine[]
+  commissions Commission[]
+  attachments Attachment[]
+
+  @@unique([organizationId, number])
+  @@index([organizationId])
+  @@index([status])
+  @@index([representativeId])
+  @@index([brandId])
+}
+
+model SaleLine {
+  id          String  @id @default(cuid())
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitPrice   Decimal @db.Decimal(15, 2)
+  taxRate     Decimal @default(0) @db.Decimal(5, 2)
+  discount    Decimal @default(0) @db.Decimal(5, 2)
+  total       Decimal @db.Decimal(15, 2)
+  commissionType   CommissionType
+  commissionValue  Decimal        @db.Decimal(10, 2)
+  commissionAmount Decimal        @db.Decimal(15, 2)
+  order       Int     @default(0)
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  productId String?
+  product   BrandProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+}
+
+model Commission {
+  id            String           @id @default(cuid())
+  amount        Decimal          @db.Decimal(15, 2)
+  currency      String           @default("EUR")
+  status        CommissionStatus @default(PENDING)
+  paidAt        DateTime?
+  paidMethod    String?
+  paidReference String?
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  representativeId String
+  representative   User   @relation(fields: [representativeId], references: [id])
+
+  @@index([organizationId])
+  @@index([representativeId])
+  @@index([status])
+}
+
+model Attachment {
+  id        String         @id @default(cuid())
+  filename  String
+  mimeType  String
+  size      Int
+  url       String
+  type      AttachmentType @default(OTHER)
+  localPath String?
+  uploaded  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  saleId String?
+  sale   Sale?   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([saleId])
+}
+
+model CustomField {
+  id           String            @id @default(cuid())
+  entity       CustomFieldEntity
+  key          String
+  label        String
+  type         CustomFieldType
+  options      Json?
+  required     Boolean           @default(false)
+  defaultValue String?
+  helpText     String?
+  order        Int               @default(0)
+  active       Boolean           @default(true)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, entity, key])
+  @@index([organizationId])
+}
+
+model ContractTemplate {
+  id           String   @id @default(cuid())
+  name         String
+  version      Int      @default(1)
+  htmlContent  String   @db.Text
+  pdfHeaderUrl String?
+  pdfFooterUrl String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  brandId String?
+  brand   Brand?  @relation(fields: [brandId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
 }
