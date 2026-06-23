@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { logAudit } from '@/lib/audit';
+import { notifyManagers } from '@/lib/notifications';
+import { dispatchWebhook } from '@/lib/webhooks';
 import { CommissionType, SaleStatus } from '@prisma/client';
 import type { Brand, BrandProduct } from '@prisma/client';
 
@@ -142,6 +144,35 @@ export async function createSale(input: z.infer<typeof saleSchema>) {
     entity: 'Sale',
     entityId: sale.id,
     metadata: { number: sale.number, total: Number(sale.total), brandId: brand.id },
+  });
+
+  await notifyManagers({
+    organizationId: session.user.organizationId,
+    type: sale.status === 'SIGNED' ? 'SALE_SIGNED' : 'SALE_CREATED',
+    title: sale.status === 'SIGNED'
+      ? `Nueva venta firmada: ${sale.number}`
+      : `Borrador de venta: ${sale.number}`,
+    message: `${session.user.name} ha registrado una venta de ${Number(sale.total).toFixed(2)} ${sale.currency} para ${brand.name}.`,
+    link: `/sales-orders/${sale.id}`,
+    metadata: { saleId: sale.id, amount: Number(sale.total) },
+    exceptUserId: session.user.id,
+  });
+
+  await dispatchWebhook({
+    organizationId: session.user.organizationId,
+    event: sale.status === 'SIGNED' ? 'SALE_SIGNED' : 'SALE_CREATED',
+    payload: {
+      saleId: sale.id,
+      number: sale.number,
+      status: sale.status,
+      brand: { id: brand.id, name: brand.name },
+      customerId: customer.id,
+      total: Number(sale.total),
+      commission: Number(sale.totalCommission),
+      currency: sale.currency,
+      representativeId: session.user.id,
+      representativeName: session.user.name,
+    },
   });
 
   revalidatePath('/sales-orders');

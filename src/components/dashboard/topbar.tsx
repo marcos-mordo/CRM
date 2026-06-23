@@ -21,6 +21,7 @@ import { initials } from '@/lib/utils';
 import { SidebarContent } from './sidebar-content';
 import { OfflineSyncIndicator } from '@/components/offline/offline-sync-indicator';
 import { CommandPalette } from './command-palette';
+import { NotificationsBell } from './notifications-bell';
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -61,6 +62,7 @@ export function Topbar() {
 
       <div className="flex items-center gap-2">
         <CommandPalette />
+        <NotificationsBell />
         <div className="hidden sm:block">
           <OfflineSyncIndicator />
         </div>

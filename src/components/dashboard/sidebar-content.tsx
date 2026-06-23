@@ -25,9 +25,12 @@ import {
   Handshake,
   Wallet,
   UserCheck,
+  ShieldCheck,
+  Trophy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
+import { useSession } from 'next-auth/react';
 
 type NavSection = {
   label: string;
@@ -37,12 +40,16 @@ type NavSection = {
 export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const tNav = useTranslations('Nav');
+  const { data: session } = useSession();
+  const role = (session?.user as any)?.role;
+  const isAdmin = role === 'OWNER' || role === 'ADMIN';
 
   const sections: NavSection[] = [
     {
       label: 'CRM',
       items: [
         { href: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
+        { href: '/me', icon: Trophy, labelKey: 'myDashboard' },
         { href: '/contacts', icon: Users, labelKey: 'contacts' },
         { href: '/companies', icon: Building2, labelKey: 'companies' },
         { href: '/leads', icon: UserPlus, labelKey: 'leads' },
@@ -85,7 +92,10 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     },
     {
       label: tNav('settings'),
-      items: [{ href: '/settings', icon: Settings, labelKey: 'settings' }],
+      items: [
+        { href: '/settings', icon: Settings, labelKey: 'settings' },
+        ...(isAdmin ? [{ href: '/audit-log', icon: ShieldCheck, labelKey: 'auditLog' as const }] : []),
+      ],
     },
   ];
 

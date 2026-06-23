@@ -94,7 +94,9 @@
     "sales": "Ventas",
     "endCustomers": "Clientes finales",
     "commissions": "Comisiones",
-    "contractTemplates": "Plantillas contrato"
+    "contractTemplates": "Plantillas contrato",
+    "auditLog": "Auditoría",
+    "myDashboard": "Mi panel"
   },
   "Dashboard": {
     "title": "Panel principal",
