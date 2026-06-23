@@ -57,6 +57,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/end-customers', icon: UserCheck, labelKey: 'endCustomers' },
         { href: '/sales-orders', icon: Handshake, labelKey: 'sales' },
         { href: '/commissions', icon: Wallet, labelKey: 'commissions' },
+        { href: '/contract-templates', icon: FileText, labelKey: 'contractTemplates' },
       ],
     },
     {

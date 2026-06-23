@@ -64,3 +64,59 @@ export async function deleteEndCustomer(id: string) {
   revalidatePath('/end-customers');
   return { ok: true };
 }
+
+const csvRowSchema = z.object({
+  isCompany: z.boolean().default(false),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  companyName: z.string().optional(),
+  taxId: z.string().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  mobile: z.string().optional(),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
+  province: z.string().optional(),
+  country: z.string().default('España'),
+  gdprConsent: z.boolean().default(false),
+  marketingConsent: z.boolean().default(false),
+});
+
+export async function importEndCustomers(rows: z.infer<typeof csvRowSchema>[]) {
+  const session = await requireAuth();
+  let imported = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row.gdprConsent) {
+      skipped++;
+      errors.push(`Fila ${i + 1}: sin consentimiento RGPD, omitida`);
+      continue;
+    }
+    if (!row.taxId && !row.email) {
+      skipped++;
+      errors.push(`Fila ${i + 1}: sin DNI/CIF ni email, omitida`);
+      continue;
+    }
+    try {
+      await prisma.endCustomer.create({
+        data: {
+          ...row,
+          email: row.email || null,
+          gdprConsentAt: new Date(),
+          organizationId: session.user.organizationId,
+        },
+      });
+      imported++;
+    } catch (e: any) {
+      skipped++;
+      errors.push(`Fila ${i + 1}: ${e.message}`);
+    }
+  }
+
+  revalidatePath('/end-customers');
+  return { imported, skipped, errors };
+}
