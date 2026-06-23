@@ -1,6 +1,8 @@
 import { LoginForm } from '@/components/auth/login-form';
+import { SsoButtons } from '@/components/auth/sso-buttons';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { BrandLogo } from '@/components/brand-logo';
+import { SSO_AVAILABLE } from '@/auth';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -15,6 +17,7 @@ export default async function LoginPage() {
         <CardDescription>{t('loginSubtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
+        <SsoButtons google={SSO_AVAILABLE.google} microsoft={SSO_AVAILABLE.microsoft} />
         <LoginForm />
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {t('noAccount')}{' '}

@@ -13,13 +13,21 @@ export const authConfig: NextAuthConfig = {
   session: { strategy: 'jwt', maxAge: 60 * 60 * 24 * 30 },
   providers: [], // Los providers reales se añaden en auth.ts (Node)
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
-        token.id = (user as any).id;
-        token.role = (user as any).role;
-        token.organizationId = (user as any).organizationId;
-        token.organizationName = (user as any).organizationName;
-        token.organizationSlug = (user as any).organizationSlug;
+        // Login Credentials trae todos los campos en `user`
+        if ((user as any).organizationId) {
+          token.id = (user as any).id;
+          token.role = (user as any).role;
+          token.organizationId = (user as any).organizationId;
+          token.organizationName = (user as any).organizationName;
+          token.organizationSlug = (user as any).organizationSlug;
+        } else if (user.email) {
+          // OAuth: el provider solo da email/name, hay que leer de DB
+          // (no podemos importar prisma aquí porque también corre en edge,
+          // así que la lectura ocurre en requireAuth() la primera vez)
+          token.email = user.email;
+        }
       }
       return token;
     },

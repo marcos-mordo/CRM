@@ -9,8 +9,10 @@ import { getTranslations } from 'next-intl/server';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { PipelineChart } from '@/components/dashboard/pipeline-chart';
 import { OnboardingCard } from '@/components/dashboard/onboarding-card';
+import { AiInsightsWidget } from '@/components/dashboard/ai-insights-widget';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { isAIConfigured } from '@/lib/ai';
 
 export default async function DashboardPage() {
   const session = await requireAuth();
@@ -181,6 +183,8 @@ export default async function DashboardPage() {
       <PageHeader title={t('title')} description={t('welcome', { name: session.user.name })} />
 
       <OnboardingCard steps={onboardingSteps} />
+
+      <AiInsightsWidget enabled={isAIConfigured()} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi) => {

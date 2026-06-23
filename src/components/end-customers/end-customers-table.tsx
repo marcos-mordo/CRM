@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Building2, Edit, MoreHorizontal, Search, Trash2, User as UserIcon } from 'lucide-react';
 import { EndCustomerDialog } from './end-customer-dialog';
+import { WhatsAppButton } from '@/components/whatsapp-button';
 import { deleteEndCustomer } from '@/app/(dashboard)/end-customers/actions';
 import type { EndCustomer } from '@prisma/client';
 
@@ -94,21 +95,28 @@ export function EndCustomersTable({ customers }: { customers: Row[] }) {
                 {c.gdprConsent ? <Badge variant="success">✓</Badge> : <Badge variant="destructive">✗</Badge>}
               </TableCell>
               <TableCell onClick={(e) => e.stopPropagation()}>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditing(c)}>
-                      <Edit className="h-4 w-4" /> {t('Common.edit')}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => remove(c.id)} className="text-destructive">
-                      <Trash2 className="h-4 w-4" /> {t('Common.delete')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-1">
+                  <WhatsAppButton
+                    phone={c.mobile || c.phone}
+                    message={`Hola ${c.isCompany ? c.companyName : c.firstName}, te escribo desde nuestro equipo.`}
+                    size="icon"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditing(c)}>
+                        <Edit className="h-4 w-4" /> {t('Common.edit')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => remove(c.id)} className="text-destructive">
+                        <Trash2 className="h-4 w-4" /> {t('Common.delete')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </TableCell>
             </TableRow>
           ))}

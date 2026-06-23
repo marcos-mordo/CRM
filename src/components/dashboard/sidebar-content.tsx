@@ -27,6 +27,8 @@ import {
   UserCheck,
   ShieldCheck,
   Trophy,
+  CalendarDays,
+  FileBarChart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -55,6 +57,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/leads', icon: UserPlus, labelKey: 'leads' },
         { href: '/pipeline', icon: Kanban, labelKey: 'pipeline' },
         { href: '/tasks', icon: CheckSquare, labelKey: 'tasks' },
+        { href: '/calendar', icon: CalendarDays, labelKey: 'calendar' },
       ],
     },
     {
@@ -94,6 +97,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       label: tNav('settings'),
       items: [
         { href: '/settings', icon: Settings, labelKey: 'settings' },
+        ...(isAdmin ? [{ href: '/reports', icon: FileBarChart, labelKey: 'reports' as const }] : []),
         ...(isAdmin ? [{ href: '/audit-log', icon: ShieldCheck, labelKey: 'auditLog' as const }] : []),
       ],
     },
