@@ -47,8 +47,45 @@ export function NotificationsBell() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 30000); // poll cada 30s
-    return () => clearInterval(interval);
+
+    // Server-Sent Events: empuja cambios sin polling cliente
+    let es: EventSource | null = null;
+    let reconnectTimer: number | null = null;
+
+    const connect = () => {
+      try {
+        es = new EventSource('/api/notifications/stream');
+      } catch {
+        return;
+      }
+
+      es.addEventListener('unread', (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data);
+          setUnread(data.count ?? 0);
+        } catch {}
+      });
+
+      es.addEventListener('notification', (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data);
+          setItems((prev) => [data, ...prev].slice(0, 20));
+        } catch {}
+      });
+
+      es.onerror = () => {
+        es?.close();
+        // Reintenta tras 5s
+        reconnectTimer = window.setTimeout(connect, 5000);
+      };
+    };
+
+    connect();
+
+    return () => {
+      es?.close();
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+    };
   }, []);
 
   const openOne = (n: Notification) => {
