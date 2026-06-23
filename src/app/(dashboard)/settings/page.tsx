@@ -5,17 +5,25 @@ import { PageHeader } from '@/components/dashboard/page-header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OrgSettingsForm } from '@/components/settings/org-settings-form';
 import { TeamSettings } from '@/components/settings/team-settings';
+import { RepAssignmentsManager } from '@/components/settings/rep-assignments-manager';
 import { getTranslations } from 'next-intl/server';
 
 export default async function SettingsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Settings');
 
-  const [org, users] = await Promise.all([
+  const [org, users, brands, assignments] = await Promise.all([
     prisma.organization.findUniqueOrThrow({ where: { id: session.user.organizationId } }),
     prisma.user.findMany({
       where: { organizationId: session.user.organizationId },
       orderBy: { createdAt: 'asc' },
+    }),
+    prisma.brand.findMany({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.repBrandAssignment.findMany({
+      where: { organizationId: session.user.organizationId },
     }),
   ]);
 
@@ -24,9 +32,10 @@ export default async function SettingsPage() {
       <PageHeader title={t('title')} />
 
       <Tabs defaultValue="organization">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="organization">{t('organization')}</TabsTrigger>
           <TabsTrigger value="team">{t('team')}</TabsTrigger>
+          <TabsTrigger value="assignments">Reps ↔ Marcas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization" className="space-y-4">
@@ -43,6 +52,20 @@ export default async function SettingsPage() {
 
         <TabsContent value="team" className="space-y-4">
           <TeamSettings users={users} currentUserId={session.user.id} />
+        </TabsContent>
+
+        <TabsContent value="assignments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Asignación de representantes</CardTitle>
+              <CardDescription>
+                Marca con check qué representantes pueden vender cada marca. Opcionalmente sobrescribe la comisión de la marca para ese representante.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RepAssignmentsManager users={users.filter((u) => u.active)} brands={brands.filter((b) => b.active)} assignments={assignments} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>

@@ -93,7 +93,8 @@
     "brandProducts": "Catalog",
     "sales": "Sales",
     "endCustomers": "End customers",
-    "commissions": "Commissions"
+    "commissions": "Commissions",
+    "contractTemplates": "Contract templates"
   },
   "Dashboard": {
     "title": "Dashboard",

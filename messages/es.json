@@ -93,7 +93,8 @@
     "brandProducts": "Catálogo",
     "sales": "Ventas",
     "endCustomers": "Clientes finales",
-    "commissions": "Comisiones"
+    "commissions": "Comisiones",
+    "contractTemplates": "Plantillas contrato"
   },
   "Dashboard": {
     "title": "Panel principal",

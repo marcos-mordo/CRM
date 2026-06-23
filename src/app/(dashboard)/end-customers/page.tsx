@@ -6,6 +6,7 @@ import { UserCheck } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { EndCustomersTable } from '@/components/end-customers/end-customers-table';
 import { EndCustomerDialog } from '@/components/end-customers/end-customer-dialog';
+import { ImportCsvButton } from '@/components/end-customers/import-csv-button';
 import { getTranslations } from 'next-intl/server';
 
 export default async function EndCustomersPage() {
@@ -21,6 +22,7 @@ export default async function EndCustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${customers.length} clientes`}>
+        <ImportCsvButton />
         <EndCustomerDialog />
       </PageHeader>
 
