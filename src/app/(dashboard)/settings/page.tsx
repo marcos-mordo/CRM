@@ -8,6 +8,7 @@ import { TeamSettings } from '@/components/settings/team-settings';
 import { RepAssignmentsManager } from '@/components/settings/rep-assignments-manager';
 import { WebhooksManager } from '@/components/settings/webhooks-manager';
 import { ApiTokensManager } from '@/components/settings/api-tokens-manager';
+import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 export default async function SettingsPage() {
@@ -48,6 +49,9 @@ export default async function SettingsPage() {
           <TabsTrigger value="assignments">Reps ↔ Marcas</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="api-tokens">API tokens</TabsTrigger>
+          <TabsTrigger value="billing" asChild>
+            <Link href="/settings/billing">Billing</Link>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization" className="space-y-4">
