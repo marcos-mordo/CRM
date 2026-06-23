@@ -7,19 +7,35 @@ export async function requireAuth() {
   const session = await auth();
   if (!session?.user) redirect('/login');
 
-  // Resolver org actual desde cookie (si el usuario cambió de organización)
   const userAny = session.user as any;
+
+  // OAuth: el JWT solo trae email — hidratamos desde DB
+  if (!userAny.id && session.user.email) {
+    const { prisma } = await import('@/lib/prisma');
+    const dbUser = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: { organization: true },
+    });
+    if (!dbUser) redirect('/login');
+    userAny.id = dbUser.id;
+    userAny.role = dbUser.role;
+    userAny.organizationId = dbUser.organizationId;
+    userAny.organizationName = dbUser.organization.name;
+    userAny.organizationSlug = dbUser.organization.slug;
+    session.user.name = dbUser.name;
+  }
+
+  // Resolver org actual desde cookie (si el usuario cambió de organización)
   try {
     const resolved = await resolveCurrentOrg(
       userAny.id,
       userAny.organizationId,
       userAny.role
     );
-    // Sobreescribimos la sesión en memoria con la org activa
-    (session.user as any).organizationId = resolved.organizationId;
-    (session.user as any).organizationName = resolved.organizationName;
-    (session.user as any).organizationSlug = resolved.organizationSlug;
-    (session.user as any).role = resolved.role;
+    userAny.organizationId = resolved.organizationId;
+    userAny.organizationName = resolved.organizationName;
+    userAny.organizationSlug = resolved.organizationSlug;
+    userAny.role = resolved.role;
   } catch {
     // Si falla la resolución, mantenemos lo que vino del JWT
   }

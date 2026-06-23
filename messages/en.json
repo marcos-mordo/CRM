@@ -96,7 +96,9 @@
     "commissions": "Commissions",
     "contractTemplates": "Contract templates",
     "auditLog": "Audit log",
-    "myDashboard": "My panel"
+    "myDashboard": "My panel",
+    "calendar": "Calendar",
+    "reports": "Reports"
   },
   "Dashboard": {
     "title": "Dashboard",

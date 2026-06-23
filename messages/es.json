@@ -96,7 +96,9 @@
     "commissions": "Comisiones",
     "contractTemplates": "Plantillas contrato",
     "auditLog": "Auditoría",
-    "myDashboard": "Mi panel"
+    "myDashboard": "Mi panel",
+    "calendar": "Calendario",
+    "reports": "Reportes"
   },
   "Dashboard": {
     "title": "Panel principal",
