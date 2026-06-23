@@ -94,7 +94,9 @@
     "sales": "Sales",
     "endCustomers": "End customers",
     "commissions": "Commissions",
-    "contractTemplates": "Contract templates"
+    "contractTemplates": "Contract templates",
+    "auditLog": "Audit log",
+    "myDashboard": "My panel"
   },
   "Dashboard": {
     "title": "Dashboard",

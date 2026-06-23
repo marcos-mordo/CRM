@@ -59,6 +59,9 @@ model Organization {
   repAssignments     RepBrandAssignment[]
   attachments        Attachment[]
   auditLogs          AuditLog[]
+  notifications      Notification[]
+  webhooks           WebhookEndpoint[]
+  webhookDeliveries  WebhookDelivery[]
 
   @@index([slug])
 }
@@ -103,6 +106,7 @@ model User {
   brandAssignments RepBrandAssignment[]
   salesAsRep       Sale[]               @relation("SaleRepresentative")
   commissions      Commission[]
+  notifications    Notification[]
 
   @@index([organizationId])
   @@index([email])
@@ -1246,4 +1250,101 @@ model AuditLog {
   @@index([organizationId])
   @@index([action])
   @@index([createdAt])
+}
+
+// ============================================
+// NOTIFICACIONES in-app
+// ============================================
+
+enum NotificationType {
+  SALE_CREATED       // Para managers cuando llega una venta nueva
+  SALE_SIGNED        // Para managers cuando se firma una venta
+  COMMISSION_PENDING // Para managers: hay comisión esperando aprobación
+  COMMISSION_PAID    // Para reps: su comisión fue pagada
+  COMMISSION_APPROVED // Para reps: su comisión fue aprobada
+  TASK_ASSIGNED
+  MENTION
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String?          @db.Text
+  link      String?
+  metadata  Json?
+  read      Boolean          @default(false)
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read, createdAt])
+  @@index([organizationId])
+}
+
+// ============================================
+// WEBHOOKS SALIENTES
+// ============================================
+
+enum WebhookEvent {
+  SALE_CREATED
+  SALE_SIGNED
+  SALE_CANCELLED
+  COMMISSION_APPROVED
+  COMMISSION_PAID
+  CUSTOMER_CREATED
+  BRAND_CREATED
+}
+
+model WebhookEndpoint {
+  id          String         @id @default(cuid())
+  name        String
+  url         String
+  secret      String?        // Para HMAC signature
+  events      WebhookEvent[]
+  active      Boolean        @default(true)
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  deliveries WebhookDelivery[]
+
+  @@index([organizationId])
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+model WebhookDelivery {
+  id          String                @id @default(cuid())
+  event       WebhookEvent
+  payload     Json
+  status      WebhookDeliveryStatus @default(PENDING)
+  httpStatus  Int?
+  response    String?               @db.Text
+  attempts    Int                   @default(0)
+  lastError   String?               @db.Text
+  deliveredAt DateTime?
+  createdAt   DateTime              @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  endpointId String
+  endpoint   WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([status])
 }
