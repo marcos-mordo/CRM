@@ -9,6 +9,7 @@ import { NewSaleButton } from '@/components/sales/new-sale-button';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 
 export default async function SalesOrdersPage() {
   const session = await requireAuth();
@@ -44,6 +45,13 @@ export default async function SalesOrdersPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${sales.length} ventas`}>
+        {sales.length > 0 && (
+          <Button variant="outline" asChild>
+            <a href="/api/sales/export" download>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </a>
+          </Button>
+        )}
         {canCreate && <NewSaleButton brands={brands} customers={customers} products={products} />}
       </PageHeader>
 

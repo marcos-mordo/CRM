@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Sun, Moon, Globe, LogOut, Settings, Menu } from 'lucide-react';
 import { initials } from '@/lib/utils';
 import { SidebarContent } from './sidebar-content';
+import { OfflineSyncIndicator } from '@/components/offline/offline-sync-indicator';
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -58,6 +59,9 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <div className="hidden sm:block">
+          <OfflineSyncIndicator />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
