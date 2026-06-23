@@ -8,6 +8,19 @@ async function main() {
 
   // Limpiar
   await prisma.$transaction([
+    // BrandHub primero (dependen del schema base)
+    prisma.commission.deleteMany(),
+    prisma.attachment.deleteMany(),
+    prisma.saleLine.deleteMany(),
+    prisma.sale.deleteMany(),
+    prisma.repBrandAssignment.deleteMany(),
+    prisma.brandProduct.deleteMany(),
+    prisma.contractTemplate.deleteMany(),
+    prisma.commissionRule.deleteMany(),
+    prisma.brand.deleteMany(),
+    prisma.endCustomer.deleteMany(),
+    prisma.customField.deleteMany(),
+    // CRM Core
     prisma.payment.deleteMany(),
     prisma.invoiceLine.deleteMany(),
     prisma.invoice.deleteMany(),
@@ -494,6 +507,386 @@ async function main() {
     },
   });
   console.log('✓ Artículos creados');
+
+  // ============================================
+  // BRANDHUB: Marcas IT/ciberseguridad representadas
+  // ============================================
+
+  const brands = await Promise.all([
+    prisma.brand.create({
+      data: {
+        name: 'CyberShield',
+        legalName: 'CyberShield Security S.L.',
+        taxId: 'B12345678',
+        description: 'Soluciones EDR/XDR y MDR para empresas medianas',
+        website: 'cybershield.io',
+        contactPerson: 'Elena Vargas',
+        contactEmail: 'partners@cybershield.io',
+        contactPhone: '+34 91 123 4567',
+        defaultCommissionType: 'PERCENTAGE',
+        defaultCommissionValue: 15,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        name: 'CloudGuard',
+        legalName: 'CloudGuard Technologies SA',
+        taxId: 'A87654321',
+        description: 'Backup en la nube y disaster recovery',
+        website: 'cloudguard.es',
+        contactPerson: 'Marcos Ruiz',
+        contactEmail: 'channel@cloudguard.es',
+        defaultCommissionType: 'PERCENTAGE',
+        defaultCommissionValue: 20,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        name: 'PenTestPro',
+        legalName: 'PenTestPro Consulting',
+        taxId: 'B11223344',
+        description: 'Auditorías de seguridad y pentesting',
+        website: 'pentestpro.com',
+        contactPerson: 'Daniela Pérez',
+        defaultCommissionType: 'PERCENTAGE',
+        defaultCommissionValue: 10,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        name: 'SOCWatch',
+        legalName: 'SOCWatch 24/7 Services',
+        taxId: 'B55667788',
+        description: 'SOC gestionado 24/7 con respuesta a incidentes',
+        contactPerson: 'Iván Castro',
+        defaultCommissionType: 'FIXED_AMOUNT',
+        defaultCommissionValue: 150,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brand.create({
+      data: {
+        name: 'TrainSec',
+        legalName: 'TrainSec Academy',
+        description: 'Formación en ciberseguridad para empleados',
+        defaultCommissionType: 'PERCENTAGE',
+        defaultCommissionValue: 25,
+        organizationId: org.id,
+      },
+    }),
+  ]);
+  console.log(`✓ ${brands.length} marcas BrandHub creadas`);
+
+  const [cybershield, cloudguard, pentestpro, socwatch, trainsec] = brands;
+
+  // Catálogos
+  const brandProducts = await Promise.all([
+    // CyberShield
+    prisma.brandProduct.create({
+      data: {
+        sku: 'CS-EDR-PRO',
+        name: 'CyberShield EDR Pro',
+        description: 'Detección y respuesta de endpoints para hasta 50 usuarios',
+        type: 'SAAS_SUBSCRIPTION',
+        billingFrequency: 'YEARLY',
+        basePrice: 1800,
+        taxRate: 21,
+        currency: 'EUR',
+        brandId: cybershield.id,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brandProduct.create({
+      data: {
+        sku: 'CS-XDR-ENT',
+        name: 'CyberShield XDR Enterprise',
+        description: 'XDR completo con SIEM integrado',
+        type: 'SAAS_SUBSCRIPTION',
+        billingFrequency: 'YEARLY',
+        basePrice: 7500,
+        taxRate: 21,
+        brandId: cybershield.id,
+        organizationId: org.id,
+      },
+    }),
+    // CloudGuard
+    prisma.brandProduct.create({
+      data: {
+        sku: 'CG-BCK-1TB',
+        name: 'Backup 1TB mensual',
+        description: 'Copia de seguridad en la nube hasta 1TB',
+        type: 'SAAS_SUBSCRIPTION',
+        billingFrequency: 'MONTHLY',
+        basePrice: 89,
+        taxRate: 21,
+        brandId: cloudguard.id,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brandProduct.create({
+      data: {
+        sku: 'CG-DRP-STD',
+        name: 'Disaster Recovery estándar',
+        description: 'Plan de recuperación ante desastres + RTO 4h',
+        type: 'MANAGED_SERVICE',
+        billingFrequency: 'MONTHLY',
+        basePrice: 450,
+        taxRate: 21,
+        brandId: cloudguard.id,
+        organizationId: org.id,
+      },
+    }),
+    // PenTestPro
+    prisma.brandProduct.create({
+      data: {
+        sku: 'PT-WEB-BASIC',
+        name: 'Pentest web aplicación básica',
+        description: 'Auditoría OWASP Top 10 de una aplicación web',
+        type: 'AUDIT',
+        billingFrequency: 'ONE_TIME',
+        basePrice: 2500,
+        taxRate: 21,
+        brandId: pentestpro.id,
+        organizationId: org.id,
+      },
+    }),
+    prisma.brandProduct.create({
+      data: {
+        sku: 'PT-INFRA-FULL',
+        name: 'Pentest infraestructura completo',
+        description: 'Auditoría externa + interna de toda la infra',
+        type: 'AUDIT',
+        billingFrequency: 'ONE_TIME',
+        basePrice: 8000,
+        taxRate: 21,
+        commissionType: 'PERCENTAGE',
+        commissionValue: 15,
+        brandId: pentestpro.id,
+        organizationId: org.id,
+      },
+    }),
+    // SOCWatch
+    prisma.brandProduct.create({
+      data: {
+        sku: 'SW-SOC-50EP',
+        name: 'SOC 24/7 hasta 50 endpoints',
+        description: 'Monitorización 24/7 con respuesta a incidentes',
+        type: 'MANAGED_SERVICE',
+        billingFrequency: 'MONTHLY',
+        basePrice: 1200,
+        taxRate: 21,
+        brandId: socwatch.id,
+        organizationId: org.id,
+      },
+    }),
+    // TrainSec
+    prisma.brandProduct.create({
+      data: {
+        sku: 'TS-PHISH-PACK',
+        name: 'Pack concienciación phishing (anual)',
+        description: 'Simulaciones de phishing + microformación trimestral',
+        type: 'TRAINING',
+        billingFrequency: 'YEARLY',
+        basePrice: 1500,
+        taxRate: 21,
+        brandId: trainsec.id,
+        organizationId: org.id,
+      },
+    }),
+  ]);
+  console.log(`✓ ${brandProducts.length} productos de marcas creados`);
+
+  // Asignaciones rep ↔ marca
+  await Promise.all([
+    prisma.repBrandAssignment.create({
+      data: { userId: agent.id, brandId: cybershield.id, territory: 'Madrid', organizationId: org.id },
+    }),
+    prisma.repBrandAssignment.create({
+      data: { userId: agent.id, brandId: cloudguard.id, territory: 'Madrid', organizationId: org.id },
+    }),
+    prisma.repBrandAssignment.create({
+      data: { userId: agent.id, brandId: socwatch.id, organizationId: org.id },
+    }),
+    prisma.repBrandAssignment.create({
+      data: { userId: manager.id, brandId: pentestpro.id, organizationId: org.id },
+    }),
+    prisma.repBrandAssignment.create({
+      data: { userId: manager.id, brandId: trainsec.id, organizationId: org.id },
+    }),
+  ]);
+  console.log('✓ Asignaciones rep-marca creadas');
+
+  // Clientes finales (mezcla empresa y persona física)
+  const endCustomers = await Promise.all([
+    prisma.endCustomer.create({
+      data: {
+        isCompany: true,
+        companyName: 'Despacho Legal Hernández',
+        taxId: 'B98765432',
+        email: 'admin@hernandez.legal',
+        phone: '+34 91 555 0001',
+        mobile: '+34 600 100 200',
+        address: 'Calle Serrano 123',
+        city: 'Madrid',
+        postalCode: '28006',
+        province: 'Madrid',
+        gdprConsent: true,
+        gdprConsentAt: new Date(),
+        organizationId: org.id,
+      },
+    }),
+    prisma.endCustomer.create({
+      data: {
+        isCompany: true,
+        companyName: 'Clínica Dental Sonríe',
+        taxId: 'B12349876',
+        email: 'gerencia@sonrieclinic.es',
+        mobile: '+34 600 111 222',
+        address: 'Av. Diagonal 450',
+        city: 'Barcelona',
+        postalCode: '08006',
+        province: 'Barcelona',
+        gdprConsent: true,
+        gdprConsentAt: new Date(),
+        organizationId: org.id,
+      },
+    }),
+    prisma.endCustomer.create({
+      data: {
+        isCompany: false,
+        firstName: 'Carmen',
+        lastName: 'Ortega',
+        taxId: '12345678Z',
+        email: 'cortega@gmail.com',
+        mobile: '+34 666 777 888',
+        address: 'Calle Princesa 45',
+        city: 'Madrid',
+        postalCode: '28008',
+        gdprConsent: true,
+        gdprConsentAt: new Date(),
+        marketingConsent: true,
+        organizationId: org.id,
+      },
+    }),
+    prisma.endCustomer.create({
+      data: {
+        isCompany: true,
+        companyName: 'Construcciones Méndez SL',
+        taxId: 'B33445566',
+        email: 'it@construmendez.com',
+        city: 'Valencia',
+        gdprConsent: true,
+        gdprConsentAt: new Date(),
+        organizationId: org.id,
+      },
+    }),
+  ]);
+  console.log(`✓ ${endCustomers.length} clientes finales creados`);
+
+  // Una venta de ejemplo (firmada, activa)
+  const csEdr = brandProducts[0]; // CyberShield EDR Pro
+  const lineSub = Number(csEdr.basePrice);
+  const lineTax = (lineSub * Number(csEdr.taxRate)) / 100;
+  const commAmount = (lineSub * Number(cybershield.defaultCommissionValue)) / 100;
+
+  const sale1 = await prisma.sale.create({
+    data: {
+      number: 'V-2026-00001',
+      status: 'ACTIVE',
+      saleDate: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      signedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      activatedAt: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000),
+      currency: 'EUR',
+      subtotal: lineSub,
+      taxAmount: lineTax,
+      total: lineSub + lineTax,
+      totalCommission: commAmount,
+      signatureMethod: 'canvas',
+      organizationId: org.id,
+      brandId: cybershield.id,
+      endCustomerId: endCustomers[0].id,
+      representativeId: agent.id,
+      lines: {
+        create: {
+          description: csEdr.name,
+          quantity: 1,
+          unitPrice: lineSub,
+          taxRate: Number(csEdr.taxRate),
+          discount: 0,
+          total: lineSub + lineTax,
+          commissionType: 'PERCENTAGE',
+          commissionValue: Number(cybershield.defaultCommissionValue),
+          commissionAmount: commAmount,
+          productId: csEdr.id,
+          order: 0,
+        },
+      },
+      commissions: {
+        create: {
+          amount: commAmount,
+          currency: 'EUR',
+          status: 'PAID',
+          paidAt: new Date(),
+          paidMethod: 'Transferencia',
+          organizationId: org.id,
+          representativeId: agent.id,
+        },
+      },
+    },
+  });
+
+  // Segunda venta — pentest infra, comisión specific override
+  const ptInfra = brandProducts[5];
+  const lineSub2 = Number(ptInfra.basePrice);
+  const lineTax2 = (lineSub2 * Number(ptInfra.taxRate)) / 100;
+  const commAmount2 = (lineSub2 * 15) / 100; // override 15%
+
+  await prisma.sale.create({
+    data: {
+      number: 'V-2026-00002',
+      status: 'SIGNED',
+      saleDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      signedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      currency: 'EUR',
+      subtotal: lineSub2,
+      taxAmount: lineTax2,
+      total: lineSub2 + lineTax2,
+      totalCommission: commAmount2,
+      signatureMethod: 'canvas',
+      organizationId: org.id,
+      brandId: pentestpro.id,
+      endCustomerId: endCustomers[1].id,
+      representativeId: manager.id,
+      lines: {
+        create: {
+          description: ptInfra.name,
+          quantity: 1,
+          unitPrice: lineSub2,
+          taxRate: Number(ptInfra.taxRate),
+          discount: 0,
+          total: lineSub2 + lineTax2,
+          commissionType: 'PERCENTAGE',
+          commissionValue: 15,
+          commissionAmount: commAmount2,
+          productId: ptInfra.id,
+          order: 0,
+        },
+      },
+      commissions: {
+        create: {
+          amount: commAmount2,
+          currency: 'EUR',
+          status: 'APPROVED',
+          organizationId: org.id,
+          representativeId: manager.id,
+        },
+      },
+    },
+  });
+  console.log('✓ Ventas BrandHub creadas con comisiones');
 
   console.log('\n✅ Seed completado correctamente\n');
   console.log('📧 Usuarios disponibles:');
