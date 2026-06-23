@@ -15,6 +15,7 @@ import { ArrowLeft, ArrowRight, Check, Loader2, Minus, Plus } from 'lucide-react
 import { SignaturePad } from './signature-pad';
 import { createSale } from '@/app/(dashboard)/sales-orders/actions';
 import { formatCurrency, cn } from '@/lib/utils';
+import { enqueue, isOnline } from '@/lib/offline-queue';
 import type { Brand, BrandProduct, EndCustomer } from '@prisma/client';
 
 interface Props {
@@ -81,22 +82,42 @@ export function NewSaleDialog({ brands, customers, products, open, onOpenChange 
     if (!asDraft && !signature) return toast.error('Captura la firma del cliente');
 
     startTransition(async () => {
+      const uuid = crypto.randomUUID();
+      const payload = {
+        brandId,
+        endCustomerId: customerId,
+        lines: cart,
+        notes,
+        signatureData: signature ?? undefined,
+        signatureMethod: signature ? 'canvas' : undefined,
+        status: asDraft ? 'DRAFT' : 'SIGNED',
+      };
+
+      if (!isOnline()) {
+        try {
+          await enqueue({ uuid, type: 'CREATE_SALE', payload });
+          toast.success('Sin conexión — venta guardada en cola para sincronizar');
+          onOpenChange(false);
+        } catch (e: any) {
+          toast.error('No se pudo guardar offline: ' + e.message);
+        }
+        return;
+      }
+
       try {
-        const res = await createSale({
-          brandId,
-          endCustomerId: customerId,
-          lines: cart,
-          notes,
-          signatureData: signature ?? undefined,
-          signatureMethod: signature ? 'canvas' : undefined,
-          status: asDraft ? 'DRAFT' : 'SIGNED',
-          clientUuid: crypto.randomUUID(),
-        });
+        const res = await createSale({ ...payload, clientUuid: uuid });
         toast.success(`Venta ${res.number} guardada`);
         onOpenChange(false);
         router.refresh();
       } catch (e: any) {
-        toast.error(e.message || 'Error al guardar');
+        // Si falla la red, ponemos en cola
+        try {
+          await enqueue({ uuid, type: 'CREATE_SALE', payload });
+          toast.warning('Fallo al enviar — guardada en cola para reintentar');
+          onOpenChange(false);
+        } catch {
+          toast.error(e.message || 'Error al guardar');
+        }
       }
     });
   };

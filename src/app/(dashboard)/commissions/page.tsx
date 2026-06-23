@@ -2,11 +2,12 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
-import { Wallet, Clock, CheckCircle, DollarSign } from 'lucide-react';
+import { Wallet, Clock, CheckCircle, DollarSign, Download } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { CommissionsTable } from '@/components/commissions/commissions-table';
 import { getTranslations } from 'next-intl/server';
 import { formatCurrency } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 export default async function CommissionsPage() {
   const session = await requireAuth();
@@ -46,7 +47,15 @@ export default async function CommissionsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('title')} description={`${commissions.length} registros`} />
+      <PageHeader title={t('title')} description={`${commissions.length} registros`}>
+        {commissions.length > 0 && (
+          <Button variant="outline" asChild>
+            <a href="/api/commissions/export" download>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </a>
+          </Button>
+        )}
+      </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {kpis.map((kpi) => {
