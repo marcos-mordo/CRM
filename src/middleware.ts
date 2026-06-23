@@ -1,23 +1,9 @@
-import createMiddleware from 'next-intl/middleware';
 import { auth } from '@/auth';
-import { NextResponse } from 'next/server';
-import { routing } from '@/i18n/routing';
 
-const intlMiddleware = createMiddleware(routing);
-
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/static') ||
-    pathname.includes('.')
-  ) {
-    return NextResponse.next();
-  }
-
-  return intlMiddleware(req);
+export default auth((_req) => {
+  // El callback `authorized` en auth.ts ya decide qué dejar pasar.
+  // Aquí solo necesitamos que el middleware se ejecute para que ese
+  // callback corra en cada navegación.
 });
 
 export const config = {

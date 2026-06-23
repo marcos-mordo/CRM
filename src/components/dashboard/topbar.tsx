@@ -3,7 +3,7 @@
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Sun, Moon, Globe, LogOut, User, Settings } from 'lucide-react';
+import { Sun, Moon, Globe, LogOut, Settings } from 'lucide-react';
 import { initials } from '@/lib/utils';
 
 export function Topbar() {
@@ -23,16 +23,10 @@ export function Topbar() {
   const t = useTranslations('Common');
   const locale = useLocale();
   const router = useRouter();
-  const pathname = usePathname();
 
   const switchLocale = (newLocale: string) => {
-    const segments = pathname.split('/');
-    if (['es', 'en'].includes(segments[1])) {
-      segments[1] = newLocale;
-    } else {
-      segments.splice(1, 0, newLocale);
-    }
-    router.push(segments.join('/') || '/');
+    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+    router.refresh();
   };
 
   if (!session?.user) return null;
