@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useTheme } from 'next-themes';
 import { useTranslations, useLocale } from 'next-intl';
@@ -12,10 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Sun, Moon, Globe, LogOut, Settings } from 'lucide-react';
+import { Sun, Moon, Globe, LogOut, Settings, Menu } from 'lucide-react';
 import { initials } from '@/lib/utils';
+import { SidebarContent } from './sidebar-content';
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -23,6 +26,7 @@ export function Topbar() {
   const t = useTranslations('Common');
   const locale = useLocale();
   const router = useRouter();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const switchLocale = (newLocale: string) => {
     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
@@ -34,6 +38,17 @@ export function Topbar() {
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
       <div className="flex items-center gap-3">
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="lg:hidden">
+              <Menu className="h-5 w-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="p-0 w-72">
+            <SheetTitle className="sr-only">Navegación</SheetTitle>
+            <SidebarContent onNavigate={() => setMobileNavOpen(false)} />
+          </SheetContent>
+        </Sheet>
         <div className="text-sm">
           <p className="font-semibold">{session.user.organizationName}</p>
           <p className="text-xs text-muted-foreground capitalize">

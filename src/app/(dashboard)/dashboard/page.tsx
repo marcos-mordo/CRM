@@ -3,11 +3,12 @@ import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { Badge } from '@/components/ui/badge';
-import { Users, UserPlus, Briefcase, DollarSign, Headphones, CheckSquare, TrendingUp, Mail } from 'lucide-react';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { Users, UserPlus, Briefcase, DollarSign, Headphones, CheckSquare, TrendingUp, Mail, Store, Handshake, Wallet, FileSignature } from 'lucide-react';
+import { formatCurrency, formatDate, initials } from '@/lib/utils';
 import { getTranslations } from 'next-intl/server';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { PipelineChart } from '@/components/dashboard/pipeline-chart';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 
 export default async function DashboardPage() {
@@ -22,19 +23,13 @@ export default async function DashboardPage() {
   endOfDay.setDate(endOfDay.getDate() + 1);
 
   const [
-    totalContacts,
-    newLeads,
-    openDeals,
-    pipelineValue,
-    monthlyRevenue,
-    openTickets,
-    tasksToday,
-    activeCampaigns,
-    recentActivities,
-    upcomingTasks,
-    topDeals,
-    salesByMonth,
-    pipelineByStage,
+    // CRM core KPIs
+    totalContacts, newLeads, openDeals, pipelineValue, openTickets, tasksToday, activeCampaigns,
+    // BrandHub KPIs
+    activeBrands, brandSalesMonth, commissionsPendingSum, commissionsPaidMonthSum,
+    pendingSignSales,
+    // Listados
+    recentSales, topReps, salesByBrand, salesByMonth,
   ] = await Promise.all([
     prisma.contact.count({ where: { organizationId: orgId } }),
     prisma.lead.count({ where: { organizationId: orgId, status: { in: ['NEW', 'CONTACTED'] } } }),
@@ -42,10 +37,6 @@ export default async function DashboardPage() {
     prisma.deal.aggregate({
       where: { organizationId: orgId, status: 'OPEN' },
       _sum: { amount: true },
-    }),
-    prisma.invoice.aggregate({
-      where: { organizationId: orgId, status: 'PAID', paidDate: { gte: startOfMonth } },
-      _sum: { total: true },
     }),
     prisma.ticket.count({ where: { organizationId: orgId, status: { in: ['OPEN', 'IN_PROGRESS'] } } }),
     prisma.task.count({
@@ -58,121 +49,136 @@ export default async function DashboardPage() {
     prisma.campaign.count({
       where: { organizationId: orgId, status: { in: ['SCHEDULED', 'SENDING'] } },
     }),
-    prisma.activity.findMany({
+    // BrandHub
+    prisma.brand.count({ where: { organizationId: orgId, active: true } }),
+    prisma.sale.aggregate({
+      where: { organizationId: orgId, status: { in: ['SIGNED', 'ACTIVE'] }, saleDate: { gte: startOfMonth } },
+      _sum: { total: true },
+      _count: true,
+    }),
+    prisma.commission.aggregate({
+      where: { organizationId: orgId, status: { in: ['PENDING', 'APPROVED'] } },
+      _sum: { amount: true },
+    }),
+    prisma.commission.aggregate({
+      where: { organizationId: orgId, status: 'PAID', paidAt: { gte: startOfMonth } },
+      _sum: { amount: true },
+    }),
+    prisma.sale.count({ where: { organizationId: orgId, status: { in: ['DRAFT', 'PENDING_SIGN'] } } }),
+    // Recientes
+    prisma.sale.findMany({
       where: { organizationId: orgId },
-      orderBy: { occurredAt: 'desc' },
-      take: 6,
-      include: { user: true, contact: true, deal: true },
-    }),
-    prisma.task.findMany({
-      where: {
-        organizationId: orgId,
-        status: { in: ['PENDING', 'IN_PROGRESS'] },
-        dueDate: { gte: now },
-      },
-      orderBy: { dueDate: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: 5,
-      include: { assignee: true },
+      include: { brand: true, endCustomer: true, representative: true },
     }),
-    prisma.deal.findMany({
-      where: { organizationId: orgId, status: 'OPEN' },
-      orderBy: { amount: 'desc' },
+    prisma.commission.groupBy({
+      by: ['representativeId'],
+      where: { organizationId: orgId, status: { in: ['APPROVED', 'PAID'] } },
+      _sum: { amount: true },
+      orderBy: { _sum: { amount: 'desc' } },
       take: 5,
-      include: { stage: true, owner: true },
     }),
+    prisma.sale.groupBy({
+      by: ['brandId'],
+      where: { organizationId: orgId, status: { in: ['SIGNED', 'ACTIVE'] } },
+      _sum: { total: true },
+      _count: true,
+      orderBy: { _sum: { total: 'desc' } },
+      take: 5,
+    }),
+    // Gráfico ventas BrandHub por mes (últimos 6)
     prisma.$queryRaw<{ month: string; total: number }[]>`
-      SELECT TO_CHAR(DATE_TRUNC('month', "paidDate"), 'YYYY-MM') as month,
+      SELECT TO_CHAR(DATE_TRUNC('month', "saleDate"), 'YYYY-MM') as month,
              COALESCE(SUM(total), 0)::float as total
-      FROM "Invoice"
-      WHERE "organizationId" = ${orgId} AND status = 'PAID' AND "paidDate" >= NOW() - INTERVAL '6 months'
-      GROUP BY DATE_TRUNC('month', "paidDate")
+      FROM "Sale"
+      WHERE "organizationId" = ${orgId} AND status IN ('SIGNED', 'ACTIVE')
+        AND "saleDate" >= NOW() - INTERVAL '6 months'
+      GROUP BY DATE_TRUNC('month', "saleDate")
       ORDER BY month ASC
     `.catch(() => []),
-    prisma.stage.findMany({
-      include: {
-        deals: { where: { organizationId: orgId, status: 'OPEN' }, select: { amount: true } },
-        pipeline: true,
-      },
-      where: { pipeline: { organizationId: orgId, isDefault: true } },
-      orderBy: { order: 'asc' },
-    }),
   ]);
 
+  // Resolver datos derivados
+  const repIds = topReps.map((r) => r.representativeId);
+  const reps = repIds.length
+    ? await prisma.user.findMany({ where: { id: { in: repIds } } })
+    : [];
+  const brandIds = salesByBrand.map((s) => s.brandId);
+  const brandsInfo = brandIds.length
+    ? await prisma.brand.findMany({ where: { id: { in: brandIds } } })
+    : [];
+
   const kpis = [
+    {
+      label: 'Ventas del mes',
+      value: formatCurrency(Number(brandSalesMonth._sum.total ?? 0)),
+      sublabel: `${brandSalesMonth._count} ventas`,
+      icon: Handshake,
+      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
+    },
+    {
+      label: 'Comisiones pendientes',
+      value: formatCurrency(Number(commissionsPendingSum._sum.amount ?? 0)),
+      icon: Wallet,
+      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    },
+    {
+      label: 'Pagado a reps (mes)',
+      value: formatCurrency(Number(commissionsPaidMonthSum._sum.amount ?? 0)),
+      icon: DollarSign,
+      color: 'bg-green-500/10 text-green-600 dark:text-green-400',
+    },
+    {
+      label: 'Marcas activas',
+      value: activeBrands.toString(),
+      icon: Store,
+      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
+    },
+    {
+      label: 'Pendientes firmar',
+      value: pendingSignSales.toString(),
+      icon: FileSignature,
+      color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+    },
     {
       label: t('kpi.totalContacts'),
       value: totalContacts.toLocaleString(),
       icon: Users,
-      color: 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-    },
-    {
-      label: t('kpi.newLeads'),
-      value: newLeads.toLocaleString(),
-      icon: UserPlus,
-      color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400',
+      color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
     },
     {
       label: t('kpi.openDeals'),
       value: openDeals.toLocaleString(),
       icon: Briefcase,
-      color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-    },
-    {
-      label: t('kpi.pipelineValue'),
-      value: formatCurrency(Number(pipelineValue._sum.amount ?? 0)),
-      icon: TrendingUp,
-      color: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-    },
-    {
-      label: t('kpi.monthlyRevenue'),
-      value: formatCurrency(Number(monthlyRevenue._sum.total ?? 0)),
-      icon: DollarSign,
-      color: 'bg-green-500/10 text-green-600 dark:text-green-400',
-    },
-    {
-      label: t('kpi.openTickets'),
-      value: openTickets.toLocaleString(),
-      icon: Headphones,
-      color: 'bg-red-500/10 text-red-600 dark:text-red-400',
-    },
-    {
-      label: t('kpi.tasksToday'),
-      value: tasksToday.toLocaleString(),
-      icon: CheckSquare,
       color: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
     },
     {
-      label: t('kpi.campaignsActive'),
-      value: activeCampaigns.toLocaleString(),
-      icon: Mail,
-      color: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+      label: t('kpi.tasksToday'),
+      value: tasksToday.toString(),
+      icon: CheckSquare,
+      color: 'bg-slate-500/10 text-slate-600 dark:text-slate-400',
     },
   ];
-
-  const pipelineChartData = pipelineByStage.map((s) => ({
-    name: s.name,
-    value: s.deals.reduce((sum, d) => sum + Number(d.amount), 0),
-    count: s.deals.length,
-    color: s.color,
-  }));
 
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={t('welcome', { name: session.user.name })} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi) => {
           const Icon = kpi.icon;
           return (
-            <Card key={kpi.label} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground font-medium">{kpi.label}</p>
-                    <p className="text-2xl font-bold">{kpi.value}</p>
+            <Card key={kpi.label}>
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium truncate">{kpi.label}</p>
+                    <p className="text-lg sm:text-2xl font-bold leading-tight">{kpi.value}</p>
+                    {kpi.sublabel && <p className="text-xs text-muted-foreground">{kpi.sublabel}</p>}
                   </div>
-                  <div className={`h-10 w-10 rounded-lg ${kpi.color} flex items-center justify-center`}>
-                    <Icon className="h-5 w-5" />
+                  <div className={`h-9 w-9 sm:h-10 sm:w-10 rounded-lg ${kpi.color} flex items-center justify-center shrink-0`}>
+                    <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                 </div>
               </CardContent>
@@ -184,8 +190,8 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>{t('salesChart')}</CardTitle>
-            <CardDescription>Ingresos cobrados últimos 6 meses</CardDescription>
+            <CardTitle>Ventas BrandHub por mes</CardTitle>
+            <CardDescription>Últimos 6 meses (firmadas + activas)</CardDescription>
           </CardHeader>
           <CardContent>
             <SalesChart data={salesByMonth} />
@@ -194,42 +200,63 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('pipelineChart')}</CardTitle>
-            <CardDescription>Valor por etapa del pipeline principal</CardDescription>
+            <CardTitle>Ventas por marca</CardTitle>
+            <CardDescription>Top 5 — total facturado</CardDescription>
           </CardHeader>
           <CardContent>
-            <PipelineChart data={pipelineChartData} />
+            {salesByBrand.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Sin ventas todavía</p>
+            ) : (
+              <ul className="space-y-3">
+                {salesByBrand.map((row) => {
+                  const brand = brandsInfo.find((b) => b.id === row.brandId);
+                  const maxTotal = Math.max(...salesByBrand.map((s) => Number(s._sum.total ?? 0)));
+                  const pct = (Number(row._sum.total ?? 0) / maxTotal) * 100;
+                  return (
+                    <li key={row.brandId} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{brand?.name ?? '?'}</span>
+                        <span className="font-bold">{formatCurrency(Number(row._sum.total ?? 0))}</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{row._count} ventas</p>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
           <CardHeader>
-            <CardTitle>{t('topDeals')}</CardTitle>
-            <CardDescription>Oportunidades con mayor valor</CardDescription>
+            <CardTitle>Ventas recientes</CardTitle>
+            <CardDescription>Últimas 5 firmadas</CardDescription>
           </CardHeader>
           <CardContent>
-            {topDeals.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Sin oportunidades abiertas</p>
+            {recentSales.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Sin ventas todavía</p>
             ) : (
               <ul className="space-y-3">
-                {topDeals.map((deal) => (
-                  <li key={deal.id} className="flex items-center justify-between gap-3 p-3 rounded-lg hover:bg-accent transition">
+                {recentSales.map((sale) => (
+                  <li key={sale.id} className="flex items-center justify-between gap-3 p-2 rounded hover:bg-accent transition">
                     <div className="flex-1 min-w-0">
-                      <Link href={`/pipeline?deal=${deal.id}`} className="font-medium hover:underline truncate block">
-                        {deal.title}
+                      <Link href={`/sales-orders/${sale.id}`} className="font-medium hover:underline">
+                        {sale.number}
                       </Link>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" style={{ borderColor: deal.stage.color, color: deal.stage.color }}>
-                          {deal.stage.name}
-                        </Badge>
-                        {deal.owner && <span className="text-xs text-muted-foreground">{deal.owner.name}</span>}
-                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {sale.endCustomer.isCompany ? sale.endCustomer.companyName : `${sale.endCustomer.firstName} ${sale.endCustomer.lastName}`}
+                        {' · '}
+                        <Badge variant="outline" className="text-xs">{sale.brand.name}</Badge>
+                      </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold">{formatCurrency(Number(deal.amount), deal.currency)}</p>
-                      <p className="text-xs text-muted-foreground">{deal.probability}%</p>
+                      <p className="font-bold text-sm">{formatCurrency(Number(sale.total), sale.currency)}</p>
+                      <p className="text-xs text-muted-foreground">{formatDate(sale.saleDate)}</p>
                     </div>
                   </li>
                 ))}
@@ -240,68 +267,38 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{t('upcomingTasks')}</CardTitle>
-            <CardDescription>Próximas a vencer</CardDescription>
+            <CardTitle>Ranking de representantes</CardTitle>
+            <CardDescription>Comisión aprobada + pagada</CardDescription>
           </CardHeader>
           <CardContent>
-            {upcomingTasks.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">Sin tareas próximas</p>
+            {topReps.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">Sin datos todavía</p>
             ) : (
               <ul className="space-y-3">
-                {upcomingTasks.map((task) => (
-                  <li key={task.id} className="p-3 rounded-lg hover:bg-accent transition">
-                    <p className="font-medium text-sm">{task.title}</p>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-xs text-muted-foreground">
-                        {task.dueDate && formatDate(task.dueDate)}
+                {topReps.map((row, idx) => {
+                  const rep = reps.find((r) => r.id === row.representativeId);
+                  return (
+                    <li key={row.representativeId} className="flex items-center gap-3">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </div>
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs">{initials(rep?.name ?? '?')}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{rep?.name ?? 'Desconocido'}</p>
+                      </div>
+                      <span className="font-bold text-sm text-green-600 dark:text-green-400">
+                        {formatCurrency(Number(row._sum.amount ?? 0))}
                       </span>
-                      <Badge
-                        variant={
-                          task.priority === 'URGENT' || task.priority === 'HIGH' ? 'destructive' : 'secondary'
-                        }
-                        className="text-xs"
-                      >
-                        {task.priority}
-                      </Badge>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('recentActivity')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recentActivities.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sin actividad reciente</p>
-          ) : (
-            <ul className="space-y-4">
-              {recentActivities.map((activity) => (
-                <li key={activity.id} className="flex gap-3">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-semibold text-primary">
-                    {activity.user.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm">
-                      <span className="font-medium">{activity.user.name}</span>{' '}
-                      <span className="text-muted-foreground">— {activity.subject}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{formatDate(activity.occurredAt)}</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs h-6">
-                    {activity.type}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
