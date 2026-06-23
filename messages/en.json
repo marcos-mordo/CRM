@@ -87,7 +87,13 @@
     "knowledge": "Knowledge base",
     "settings": "Settings",
     "team": "Team",
-    "organization": "Organization"
+    "organization": "Organization",
+    "brandhub": "BrandHub",
+    "brands": "Brands",
+    "brandProducts": "Catalog",
+    "sales": "Sales",
+    "endCustomers": "End customers",
+    "commissions": "Commissions"
   },
   "Dashboard": {
     "title": "Dashboard",
@@ -292,6 +298,110 @@
     "published": "Published",
     "draft": "Draft",
     "views": "Views"
+  },
+  "Brands": {
+    "title": "Represented brands",
+    "new": "New brand",
+    "name": "Trade name",
+    "legalName": "Legal name",
+    "taxId": "Tax ID",
+    "contactPerson": "Contact person",
+    "defaultCommission": "Default commission",
+    "products": "products",
+    "activeProducts": "{n} active products",
+    "deleteConfirm": "Delete this brand? Its products will be deleted too.",
+    "noBrands": "No brands yet. Add the first one."
+  },
+  "BrandProducts": {
+    "title": "{brand} catalog",
+    "new": "New product",
+    "type": "Type",
+    "billingFrequency": "Billing",
+    "basePrice": "Base price",
+    "commission": "Commission",
+    "noProducts": "No products in catalog yet.",
+    "types": {
+      "LICENSE": "Software license",
+      "SAAS_SUBSCRIPTION": "SaaS subscription",
+      "AUDIT": "Audit",
+      "TRAINING": "Training",
+      "HARDWARE": "Hardware",
+      "MANAGED_SERVICE": "Managed service",
+      "SUPPORT": "Support",
+      "CONSULTANCY": "Consultancy",
+      "CUSTOM": "Custom"
+    },
+    "frequencies": {
+      "ONE_TIME": "One time",
+      "MONTHLY": "Monthly",
+      "QUARTERLY": "Quarterly",
+      "YEARLY": "Yearly"
+    }
+  },
+  "Sales": {
+    "title": "Sales",
+    "new": "New sale",
+    "number": "Number",
+    "brand": "Brand",
+    "customer": "Customer",
+    "representative": "Representative",
+    "amount": "Amount",
+    "commission": "Commission",
+    "saleDate": "Sale date",
+    "signedAt": "Signed",
+    "status": {
+      "DRAFT": "Draft",
+      "PENDING_SIGN": "Pending signature",
+      "SIGNED": "Signed",
+      "ACTIVE": "Active",
+      "CANCELLED": "Cancelled",
+      "REFUNDED": "Refunded"
+    },
+    "noSales": "No sales registered yet.",
+    "wizardStep1": "Customer",
+    "wizardStep2": "Products",
+    "wizardStep3": "Signature",
+    "captureSignature": "Capture signature",
+    "signatureHint": "Sign with finger or mouse in the box",
+    "clearSignature": "Clear",
+    "signAndSave": "Sign and save",
+    "saveDraft": "Save draft",
+    "downloadContract": "Download contract PDF",
+    "attachments": "Attachments"
+  },
+  "EndCustomers": {
+    "title": "End customers",
+    "new": "New customer",
+    "isCompany": "Is a company",
+    "isPerson": "Is an individual",
+    "fullName": "Full name",
+    "companyName": "Company name",
+    "taxId": "Tax ID",
+    "postalCode": "Postal code",
+    "province": "Province",
+    "gdprConsent": "GDPR consent",
+    "marketingConsent": "Marketing opt-in",
+    "noCustomers": "No end customers yet."
+  },
+  "Commissions": {
+    "title": "Commissions",
+    "amount": "Amount",
+    "representative": "Representative",
+    "sale": "Sale",
+    "status": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled"
+    },
+    "totalPending": "Pending",
+    "totalApproved": "Approved",
+    "totalPaid": "Paid",
+    "approve": "Approve",
+    "pay": "Mark paid",
+    "paymentMethod": "Payment method",
+    "paymentReference": "Reference",
+    "noCommissions": "No commissions yet."
   },
   "Settings": {
     "title": "Settings",

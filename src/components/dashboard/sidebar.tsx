@@ -20,6 +20,11 @@ import {
   Settings,
   ChevronRight,
   Sparkles,
+  Store,
+  PackageSearch,
+  Handshake,
+  Wallet,
+  UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -43,6 +48,16 @@ export function Sidebar() {
         { href: '/leads', icon: UserPlus, labelKey: 'leads' },
         { href: '/pipeline', icon: Kanban, labelKey: 'pipeline' },
         { href: '/tasks', icon: CheckSquare, labelKey: 'tasks' },
+      ],
+    },
+    {
+      label: tNav('brandhub'),
+      items: [
+        { href: '/brands', icon: Store, labelKey: 'brands' },
+        { href: '/catalog', icon: PackageSearch, labelKey: 'brandProducts' },
+        { href: '/end-customers', icon: UserCheck, labelKey: 'endCustomers' },
+        { href: '/sales-orders', icon: Handshake, labelKey: 'sales' },
+        { href: '/commissions', icon: Wallet, labelKey: 'commissions' },
       ],
     },
     {

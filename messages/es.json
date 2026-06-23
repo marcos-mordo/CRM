@@ -87,7 +87,13 @@
     "knowledge": "Base de conocimiento",
     "settings": "Configuración",
     "team": "Equipo",
-    "organization": "Organización"
+    "organization": "Organización",
+    "brandhub": "BrandHub",
+    "brands": "Marcas",
+    "brandProducts": "Catálogo",
+    "sales": "Ventas",
+    "endCustomers": "Clientes finales",
+    "commissions": "Comisiones"
   },
   "Dashboard": {
     "title": "Panel principal",
@@ -292,6 +298,110 @@
     "published": "Publicado",
     "draft": "Borrador",
     "views": "Visitas"
+  },
+  "Brands": {
+    "title": "Marcas representadas",
+    "new": "Nueva marca",
+    "name": "Nombre comercial",
+    "legalName": "Razón social",
+    "taxId": "CIF/NIF",
+    "contactPerson": "Persona de contacto",
+    "defaultCommission": "Comisión por defecto",
+    "products": "productos",
+    "activeProducts": "{n} productos activos",
+    "deleteConfirm": "¿Eliminar esta marca? Se borrarán también sus productos.",
+    "noBrands": "No hay marcas representadas. Añade la primera."
+  },
+  "BrandProducts": {
+    "title": "Catálogo de {brand}",
+    "new": "Nuevo producto",
+    "type": "Tipo",
+    "billingFrequency": "Facturación",
+    "basePrice": "Precio base",
+    "commission": "Comisión",
+    "noProducts": "Sin productos en el catálogo aún.",
+    "types": {
+      "LICENSE": "Licencia software",
+      "SAAS_SUBSCRIPTION": "Suscripción SaaS",
+      "AUDIT": "Auditoría",
+      "TRAINING": "Formación",
+      "HARDWARE": "Hardware",
+      "MANAGED_SERVICE": "Servicio gestionado",
+      "SUPPORT": "Soporte",
+      "CONSULTANCY": "Consultoría",
+      "CUSTOM": "Personalizado"
+    },
+    "frequencies": {
+      "ONE_TIME": "Pago único",
+      "MONTHLY": "Mensual",
+      "QUARTERLY": "Trimestral",
+      "YEARLY": "Anual"
+    }
+  },
+  "Sales": {
+    "title": "Ventas",
+    "new": "Nueva venta",
+    "number": "Número",
+    "brand": "Marca",
+    "customer": "Cliente",
+    "representative": "Representante",
+    "amount": "Importe",
+    "commission": "Comisión",
+    "saleDate": "Fecha venta",
+    "signedAt": "Firmada",
+    "status": {
+      "DRAFT": "Borrador",
+      "PENDING_SIGN": "Pendiente firma",
+      "SIGNED": "Firmada",
+      "ACTIVE": "Activa",
+      "CANCELLED": "Cancelada",
+      "REFUNDED": "Reembolsada"
+    },
+    "noSales": "Sin ventas registradas todavía.",
+    "wizardStep1": "Cliente",
+    "wizardStep2": "Productos",
+    "wizardStep3": "Firma",
+    "captureSignature": "Capturar firma",
+    "signatureHint": "Firma con el dedo o ratón en el recuadro",
+    "clearSignature": "Borrar",
+    "signAndSave": "Firmar y guardar",
+    "saveDraft": "Guardar borrador",
+    "downloadContract": "Descargar contrato PDF",
+    "attachments": "Adjuntos"
+  },
+  "EndCustomers": {
+    "title": "Clientes finales",
+    "new": "Nuevo cliente",
+    "isCompany": "Es empresa",
+    "isPerson": "Es persona física",
+    "fullName": "Nombre completo",
+    "companyName": "Razón social",
+    "taxId": "DNI/NIF/CIF",
+    "postalCode": "Código postal",
+    "province": "Provincia",
+    "gdprConsent": "Consentimiento RGPD",
+    "marketingConsent": "Acepta marketing",
+    "noCustomers": "Sin clientes finales aún."
+  },
+  "Commissions": {
+    "title": "Comisiones",
+    "amount": "Importe",
+    "representative": "Representante",
+    "sale": "Venta",
+    "status": {
+      "PENDING": "Pendiente",
+      "APPROVED": "Aprobada",
+      "PAID": "Pagada",
+      "CANCELLED": "Anulada"
+    },
+    "totalPending": "Pendientes",
+    "totalApproved": "Aprobadas",
+    "totalPaid": "Pagadas",
+    "approve": "Aprobar",
+    "pay": "Marcar pagada",
+    "paymentMethod": "Método de pago",
+    "paymentReference": "Referencia",
+    "noCommissions": "Sin comisiones registradas."
   },
   "Settings": {
     "title": "Configuración",
