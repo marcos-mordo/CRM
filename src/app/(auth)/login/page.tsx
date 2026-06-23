@@ -1,5 +1,6 @@
 import { LoginForm } from '@/components/auth/login-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BrandLogo } from '@/components/brand-logo';
 import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
@@ -9,11 +10,7 @@ export default async function LoginPage() {
   return (
     <Card className="shadow-xl border-slate-200/60 dark:border-slate-800">
       <CardHeader className="space-y-2 text-center pb-6">
-        <div className="mx-auto mb-2 h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
-          <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-        </div>
+        <BrandLogo size={56} className="mx-auto mb-2 shadow-lg rounded-xl" />
         <CardTitle className="text-2xl">{t('loginTitle')}</CardTitle>
         <CardDescription>{t('loginSubtitle')}</CardDescription>
       </CardHeader>

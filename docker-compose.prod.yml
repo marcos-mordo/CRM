@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: brandhub-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-brandhub}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD en .env.production}
+      POSTGRES_DB: ${DB_NAME:-brandhub}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-brandhub} -d ${DB_NAME:-brandhub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: brandhub-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-brandhub}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-brandhub}?schema=public
+      NEXTAUTH_URL: ${NEXTAUTH_URL:?Define NEXTAUTH_URL en .env.production}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Define NEXTAUTH_SECRET en .env.production}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-BrandHub <noreply@brandhub.local>}
+      APP_NAME: BrandHub
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    volumes:
+      - uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks: [internal]
+
+volumes:
+  postgres_prod_data:
+    name: brandhub_postgres_prod_data
+  uploads:
+    name: brandhub_uploads
+
+networks:
+  internal:
+    driver: bridge
