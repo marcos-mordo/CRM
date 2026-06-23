@@ -39,5 +39,12 @@ prisma/migrations/dev/
 # Embedded PostgreSQL local data
 .brandhub-db/
 
+# Electron builds
+dist-electron/
+
+# Capacitor / Android
+android/
+ios/
+
 # Coverage
 coverage/
