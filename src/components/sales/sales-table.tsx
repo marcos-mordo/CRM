@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CheckCircle, Download, MoreHorizontal, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, Download, Eye, MoreHorizontal, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
+import Link from 'next/link';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { deleteSale, setSaleStatus } from '@/app/(dashboard)/sales-orders/actions';
 import type { Brand, EndCustomer, Sale, SaleStatus, User } from '@prisma/client';
@@ -104,7 +105,11 @@ export function SalesTable({ sales }: { sales: Row[] }) {
         <TableBody>
           {filtered.map((s) => (
             <TableRow key={s.id}>
-              <TableCell><code className="font-medium">{s.number}</code></TableCell>
+              <TableCell>
+                <Link href={`/sales-orders/${s.id}`} className="font-medium hover:underline">
+                  <code>{s.number}</code>
+                </Link>
+              </TableCell>
               <TableCell><Badge variant="secondary">{s.brand.name}</Badge></TableCell>
               <TableCell>
                 <p className="font-medium">
@@ -129,6 +134,11 @@ export function SalesTable({ sales }: { sales: Row[] }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/sales-orders/${s.id}`}>
+                        <Eye className="h-4 w-4" /> Ver detalle
+                      </Link>
+                    </DropdownMenuItem>
                     {s.signedPdfUrl ? (
                       <DropdownMenuItem asChild>
                         <a href={s.signedPdfUrl} target="_blank" rel="noopener noreferrer">
