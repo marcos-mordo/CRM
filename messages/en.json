@@ -422,5 +422,59 @@
       "MANAGER": "Manager",
       "AGENT": "Agent"
     }
+  },
+  "TwoFactor": {
+    "title": "Two-factor authentication",
+    "enabled": "2FA enabled",
+    "disabled": "2FA disabled",
+    "setup": "Set up 2FA",
+    "scanQr": "Scan with your authenticator app",
+    "enterCode": "Enter the 6-digit code",
+    "enableButton": "Enable 2FA",
+    "backupTitle": "Backup codes",
+    "backupHint": "Save them now. If you lose your authenticator, you can sign in with one of these. Each code can be used only once.",
+    "copyAll": "Copy all",
+    "download": "Download .txt",
+    "regenerate": "Regenerate codes",
+    "disable": "Disable 2FA",
+    "loginCode": "2FA verification code"
+  },
+  "Billing": {
+    "title": "Plan & billing",
+    "currentPlan": "Current plan",
+    "nextRenewal": "Next renewal",
+    "cancelScheduled": "Cancellation scheduled at the end of period",
+    "managePortal": "Manage subscription",
+    "subscribe": "Subscribe",
+    "downgrade": "Downgrade to Free",
+    "currentBadge": "Your current plan",
+    "freePlan": "Free",
+    "perMonth": "/mo"
+  },
+  "AuditLog": {
+    "title": "Audit log",
+    "filters": {
+      "allActions": "All actions",
+      "allUsers": "All users"
+    },
+    "system": "System",
+    "noEvents": "No events for the applied filters"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markAll": "Mark all as read"
+  },
+  "Organization": {
+    "switcher": "Your organizations",
+    "createNew": "Create organization",
+    "newName": "Organization name",
+    "newHelp": "You will be the OWNER of this new organization with isolated data",
+    "creating": "Create and switch"
+  },
+  "Onboarding": {
+    "welcome": "Welcome to BrandHub!",
+    "subtitle": "{done} of {total} steps completed — keep going to start selling",
+    "complete": "You've completed all initial steps!"
   }
 }

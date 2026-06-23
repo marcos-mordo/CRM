@@ -422,5 +422,59 @@
       "MANAGER": "Gerente",
       "AGENT": "Agente"
     }
+  },
+  "TwoFactor": {
+    "title": "Verificación en dos pasos",
+    "enabled": "2FA activado",
+    "disabled": "2FA desactivado",
+    "setup": "Configurar 2FA",
+    "scanQr": "Escanea con tu app autenticadora",
+    "enterCode": "Introduce el código de 6 dígitos",
+    "enableButton": "Activar 2FA",
+    "backupTitle": "Códigos de respaldo",
+    "backupHint": "Guárdalos ahora. Si pierdes tu autenticador, podrás iniciar sesión con uno de ellos. Cada código solo se puede usar una vez.",
+    "copyAll": "Copiar todos",
+    "download": "Descargar .txt",
+    "regenerate": "Regenerar códigos",
+    "disable": "Desactivar 2FA",
+    "loginCode": "Código de verificación 2FA"
+  },
+  "Billing": {
+    "title": "Plan y facturación",
+    "currentPlan": "Plan actual",
+    "nextRenewal": "Próxima renovación",
+    "cancelScheduled": "Cancelación programada al final del periodo",
+    "managePortal": "Gestionar suscripción",
+    "subscribe": "Contratar",
+    "downgrade": "Bajar a Free",
+    "currentBadge": "Tu plan actual",
+    "freePlan": "Gratis",
+    "perMonth": "/mes"
+  },
+  "AuditLog": {
+    "title": "Auditoría",
+    "filters": {
+      "allActions": "Todas las acciones",
+      "allUsers": "Todos los usuarios"
+    },
+    "system": "Sistema",
+    "noEvents": "Sin eventos para los filtros aplicados"
+  },
+  "Notifications": {
+    "title": "Notificaciones",
+    "empty": "Sin notificaciones",
+    "markAll": "Marcar todas como leídas"
+  },
+  "Organization": {
+    "switcher": "Tus organizaciones",
+    "createNew": "Crear organización",
+    "newName": "Nombre de la organización",
+    "newHelp": "Serás OWNER de esta nueva organización con datos aislados",
+    "creating": "Crear y cambiar"
+  },
+  "Onboarding": {
+    "welcome": "¡Bienvenido a BrandHub!",
+    "subtitle": "{done} de {total} pasos completados — sigue para empezar a vender",
+    "complete": "¡Has completado todos los pasos iniciales!"
   }
 }

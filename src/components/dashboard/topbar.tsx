@@ -22,8 +22,14 @@ import { SidebarContent } from './sidebar-content';
 import { OfflineSyncIndicator } from '@/components/offline/offline-sync-indicator';
 import { CommandPalette } from './command-palette';
 import { NotificationsBell } from './notifications-bell';
+import { OrganizationSwitcher } from './organization-switcher';
 
-export function Topbar() {
+interface TopbarProps {
+  organizations: { id: string; name: string; slug: string; role: string; isDefault: boolean }[];
+  currentOrgId: string;
+}
+
+export function Topbar({ organizations, currentOrgId }: TopbarProps) {
   const { data: session } = useSession();
   const { setTheme } = useTheme();
   const t = useTranslations('Common');
@@ -52,12 +58,7 @@ export function Topbar() {
             <SidebarContent onNavigate={() => setMobileNavOpen(false)} />
           </SheetContent>
         </Sheet>
-        <div className="text-sm">
-          <p className="font-semibold">{session.user.organizationName}</p>
-          <p className="text-xs text-muted-foreground capitalize">
-            {(session.user as any).role?.toLowerCase()}
-          </p>
-        </div>
+        <OrganizationSwitcher organizations={organizations} currentOrgId={currentOrgId} />
       </div>
 
       <div className="flex items-center gap-2">

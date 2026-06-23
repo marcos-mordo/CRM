@@ -45,7 +45,14 @@ export const authConfig: NextAuthConfig = {
         return true;
       }
 
-      if (pathname === '/' || pathname.startsWith('/api/auth') || pathname.startsWith('/_next')) {
+      if (
+        pathname === '/' ||
+        pathname.startsWith('/api/auth') ||
+        pathname.startsWith('/api/health') ||
+        pathname.startsWith('/api/stripe/webhook') ||
+        pathname.startsWith('/api/v1') ||
+        pathname.startsWith('/_next')
+      ) {
         return true;
       }
 

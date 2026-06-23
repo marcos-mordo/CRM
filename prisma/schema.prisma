@@ -64,6 +64,10 @@ model Organization {
   webhookDeliveries  WebhookDelivery[]
   apiTokens          ApiToken[]
   memberships        OrganizationMembership[]
+  subscription       Subscription?
+
+  // Stripe
+  stripeCustomerId   String?  @unique
 
   @@index([slug])
 }
@@ -1414,6 +1418,45 @@ model OrganizationMembership {
 // ============================================
 // 2FA TOTP
 // ============================================
+
+// ============================================
+// BILLING: Suscripciones Stripe
+// ============================================
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  UNPAID
+  PAUSED
+}
+
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  plan                 SubscriptionPlan   @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  stripeSubscriptionId String?            @unique
+  stripePriceId        String?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  trialEndsAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  organizationId String       @unique
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
 
 model UserTwoFactor {
   id              String   @id @default(cuid())

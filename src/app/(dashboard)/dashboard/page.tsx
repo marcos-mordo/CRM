@@ -8,6 +8,7 @@ import { formatCurrency, formatDate, initials } from '@/lib/utils';
 import { getTranslations } from 'next-intl/server';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { PipelineChart } from '@/components/dashboard/pipeline-chart';
+import { OnboardingCard } from '@/components/dashboard/onboarding-card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 
@@ -161,9 +162,25 @@ export default async function DashboardPage() {
     },
   ];
 
+  const [hasBrand, hasProduct, hasCustomer, hasSale] = await Promise.all([
+    prisma.brand.count({ where: { organizationId: orgId } }).then((n) => n > 0),
+    prisma.brandProduct.count({ where: { organizationId: orgId } }).then((n) => n > 0),
+    prisma.endCustomer.count({ where: { organizationId: orgId } }).then((n) => n > 0),
+    prisma.sale.count({ where: { organizationId: orgId } }).then((n) => n > 0),
+  ]);
+
+  const onboardingSteps = [
+    { id: 'brand', label: 'Crea tu primera marca', description: 'Añade una empresa representada para empezar.', href: '/brands', done: hasBrand },
+    { id: 'product', label: 'Configura el catálogo', description: 'Productos o servicios que ofreces.', href: '/catalog', done: hasProduct },
+    { id: 'customer', label: 'Añade un cliente', description: 'Cliente final con consentimiento RGPD.', href: '/end-customers', done: hasCustomer },
+    { id: 'sale', label: 'Registra tu primera venta', description: 'Wizard de 3 pasos con firma digital.', href: '/sales-orders', done: hasSale },
+  ];
+
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={t('welcome', { name: session.user.name })} />
+
+      <OnboardingCard steps={onboardingSteps} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi) => {
