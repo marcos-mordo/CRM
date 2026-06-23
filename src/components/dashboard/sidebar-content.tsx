@@ -27,6 +27,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { BrandLogo } from '@/components/brand-logo';
 
 type NavSection = {
   label: string;
@@ -92,9 +93,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
     <div className="flex h-full flex-col bg-card">
       <div className="flex h-16 items-center px-6 border-b border-border">
         <Link href="/dashboard" onClick={onNavigate} className="flex items-center gap-2 font-semibold">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
+          <BrandLogo size={32} />
           <span className="text-lg">BrandHub</span>
         </Link>
       </div>

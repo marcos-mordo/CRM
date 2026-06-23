@@ -1,0 +1,21 @@
+{
+  "name": "BrandHub",
+  "short_name": "BrandHub",
+  "description": "CRM multi-marca para agencias comerciales",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1220",
+  "theme_color": "#3B82F6",
+  "lang": "es",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["business", "productivity"]
+}

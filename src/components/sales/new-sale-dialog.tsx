@@ -90,7 +90,7 @@ export function NewSaleDialog({ brands, customers, products, open, onOpenChange 
         notes,
         signatureData: signature ?? undefined,
         signatureMethod: signature ? 'canvas' : undefined,
-        status: asDraft ? 'DRAFT' : 'SIGNED',
+        status: (asDraft ? 'DRAFT' : 'SIGNED') as 'DRAFT' | 'SIGNED',
       };
 
       if (!isOnline()) {

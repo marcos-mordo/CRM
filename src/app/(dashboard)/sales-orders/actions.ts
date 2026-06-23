@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
+import { logAudit } from '@/lib/audit';
 import { CommissionType, SaleStatus } from '@prisma/client';
 import type { Brand, BrandProduct } from '@prisma/client';
 
@@ -132,6 +133,17 @@ export async function createSale(input: z.infer<typeof saleSchema>) {
     },
   });
 
+  await logAudit({
+    action: sale.status === 'SIGNED' ? 'SALE_SIGNED' : 'SALE_CREATED',
+    organizationId: session.user.organizationId,
+    actorId: session.user.id,
+    actorName: session.user.name,
+    actorRole: session.user.role,
+    entity: 'Sale',
+    entityId: sale.id,
+    metadata: { number: sale.number, total: Number(sale.total), brandId: brand.id },
+  });
+
   revalidatePath('/sales-orders');
   revalidatePath('/commissions');
   return { ok: true, id: sale.id, number: sale.number };
@@ -157,6 +169,18 @@ export async function setSaleStatus(id: string, status: SaleStatus, cancelReason
     where: { id, organizationId: session.user.organizationId },
     data,
   });
+
+  await logAudit({
+    action: status === 'CANCELLED' ? 'SALE_CANCELLED' : status === 'REFUNDED' ? 'SALE_REFUNDED' : 'SALE_CREATED',
+    organizationId: session.user.organizationId,
+    actorId: session.user.id,
+    actorName: session.user.name,
+    actorRole: session.user.role,
+    entity: 'Sale',
+    entityId: id,
+    metadata: { status, reason: cancelReason },
+  });
+
   revalidatePath('/sales-orders');
   revalidatePath('/commissions');
   return { ok: true };

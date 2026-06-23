@@ -1,9 +1,10 @@
-import { auth } from '@/auth';
+import NextAuth from 'next-auth';
+import { authConfig } from '@/auth.config';
+
+const { auth } = NextAuth(authConfig);
 
 export default auth((_req) => {
-  // El callback `authorized` en auth.ts ya decide qué dejar pasar.
-  // Aquí solo necesitamos que el middleware se ejecute para que ese
-  // callback corra en cada navegación.
+  // El callback `authorized` en auth.config.ts decide qué dejar pasar.
 });
 
 export const config = {

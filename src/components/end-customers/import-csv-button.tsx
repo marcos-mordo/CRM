@@ -24,7 +24,7 @@ type Row = {
   city?: string;
   postalCode?: string;
   province?: string;
-  country?: string;
+  country: string;
   gdprConsent: boolean;
   marketingConsent: boolean;
 };
