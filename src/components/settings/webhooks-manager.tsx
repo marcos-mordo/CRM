@@ -10,7 +10,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Copy, Eye, EyeOff, Key, Loader2, Plus, Trash2, Webhook } from 'lucide-react';
+import { Copy, Eye, EyeOff, History, Key, Loader2, Plus, Trash2, Webhook } from 'lucide-react';
+import Link from 'next/link';
 import { createWebhook, deleteWebhook, rotateSecret, updateWebhook } from '@/app/(dashboard)/settings/webhooks/actions';
 import type { WebhookEndpoint, WebhookEvent } from '@prisma/client';
 
@@ -107,6 +108,10 @@ export function WebhooksManager({ webhooks }: { webhooks: WebhookEndpoint[] }) {
             Recibe eventos de BrandHub en Slack, Zapier, n8n, Make o cualquier endpoint HTTPS.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+        <Button variant="outline" asChild>
+          <Link href="/settings/webhooks/deliveries"><History className="h-4 w-4" /> Historial</Link>
+        </Button>
         <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setEditing(null); reset(); } }}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4" /> Nuevo webhook</Button>
@@ -167,6 +172,7 @@ export function WebhooksManager({ webhooks }: { webhooks: WebhookEndpoint[] }) {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </CardHeader>
 
       <CardContent>

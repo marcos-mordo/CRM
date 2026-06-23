@@ -7,13 +7,14 @@ import { OrgSettingsForm } from '@/components/settings/org-settings-form';
 import { TeamSettings } from '@/components/settings/team-settings';
 import { RepAssignmentsManager } from '@/components/settings/rep-assignments-manager';
 import { WebhooksManager } from '@/components/settings/webhooks-manager';
+import { ApiTokensManager } from '@/components/settings/api-tokens-manager';
 import { getTranslations } from 'next-intl/server';
 
 export default async function SettingsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Settings');
 
-  const [org, users, brands, assignments, webhooks] = await Promise.all([
+  const [org, users, brands, assignments, webhooks, apiTokens] = await Promise.all([
     prisma.organization.findUniqueOrThrow({ where: { id: session.user.organizationId } }),
     prisma.user.findMany({
       where: { organizationId: session.user.organizationId },
@@ -30,6 +31,10 @@ export default async function SettingsPage() {
       where: { organizationId: session.user.organizationId },
       orderBy: { createdAt: 'desc' },
     }),
+    prisma.apiToken.findMany({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { createdAt: 'desc' },
+    }),
   ]);
 
   return (
@@ -42,6 +47,7 @@ export default async function SettingsPage() {
           <TabsTrigger value="team">{t('team')}</TabsTrigger>
           <TabsTrigger value="assignments">Reps ↔ Marcas</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="api-tokens">API tokens</TabsTrigger>
         </TabsList>
 
         <TabsContent value="organization" className="space-y-4">
@@ -76,6 +82,10 @@ export default async function SettingsPage() {
 
         <TabsContent value="webhooks" className="space-y-4">
           <WebhooksManager webhooks={webhooks} />
+        </TabsContent>
+
+        <TabsContent value="api-tokens" className="space-y-4">
+          <ApiTokensManager tokens={apiTokens} />
         </TabsContent>
       </Tabs>
     </div>
