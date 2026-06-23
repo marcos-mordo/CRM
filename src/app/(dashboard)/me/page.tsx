@@ -7,11 +7,18 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { formatCurrency, formatDate, initials } from '@/lib/utils';
 import { CheckSquare, DollarSign, Handshake, Store, Trophy, Wallet } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { ShieldCheck } from 'lucide-react';
 
 export default async function MyDashboardPage() {
   const session = await requireAuth();
   const userId = session.user.id;
   const orgId = session.user.organizationId;
+
+  const twoFactor = await prisma.userTwoFactor.findUnique({
+    where: { userId },
+    select: { enabled: true },
+  });
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -103,7 +110,14 @@ export default async function MyDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`Hola, ${session.user.name.split(' ')[0]}`} description="Tu actividad y ganancias" />
+      <PageHeader title={`Hola, ${session.user.name.split(' ')[0]}`} description="Tu actividad y ganancias">
+        <Button variant={twoFactor?.enabled ? 'outline' : 'default'} asChild>
+          <Link href="/me/two-factor">
+            <ShieldCheck className="h-4 w-4" />
+            {twoFactor?.enabled ? '2FA activo' : 'Activar 2FA'}
+          </Link>
+        </Button>
+      </PageHeader>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((k) => {
