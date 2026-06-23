@@ -1,8 +1,10 @@
 {
-  "name": "crm-pro",
+  "name": "brandhub",
+  "productName": "BrandHub",
   "version": "1.0.0",
   "private": true,
-  "description": "CRM SaaS profesional multi-tenant - Gestión de clientes, ventas, marketing y soporte",
+  "description": "BrandHub - CRM multi-marca para agencias comerciales",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -14,7 +16,72 @@
     "prisma:studio": "prisma studio",
     "db:start": "tsx scripts/db-start.ts",
     "db:seed": "tsx prisma/seed.ts",
+    "electron:dev": "concurrently -k -n web,electron -c blue,magenta \"npm run dev\" \"wait-on http://localhost:3000 && cross-env NODE_ENV=development electron .\"",
+    "electron:start": "cross-env APP_URL=http://localhost:3000 electron .",
+    "electron:pack": "electron-builder --dir",
+    "electron:build:win": "electron-builder --win --x64",
+    "electron:build:mac": "electron-builder --mac",
+    "electron:build:linux": "electron-builder --linux",
+    "cap:add:android": "cap add android",
+    "cap:sync": "cap sync",
+    "cap:open:android": "cap open android",
+    "android:build": "cap sync android && cd android && gradlew assembleDebug",
     "setup": "npm install && prisma generate && prisma migrate deploy && tsx prisma/seed.ts"
+  },
+  "build": {
+    "appId": "com.brandhub.app",
+    "productName": "BrandHub",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "BrandHub-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "category": "public.app-category.business"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "BrandHub"
+    }
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -62,6 +129,9 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/cli": "^8.4.1",
+    "@capacitor/core": "^8.4.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.9.0",
     "@types/nodemailer": "^6.4.16",
@@ -69,6 +139,10 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "autoprefixer": "^10.4.20",
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
     "embedded-postgres": "^18.4.0-beta.17",
     "eslint": "^9.14.0",
     "eslint-config-next": "15.0.3",
@@ -76,6 +150,7 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "wait-on": "^9.0.10"
   }
 }
