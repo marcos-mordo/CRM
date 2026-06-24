@@ -8,6 +8,7 @@ import { TeamSettings } from '@/components/settings/team-settings';
 import { RepAssignmentsManager } from '@/components/settings/rep-assignments-manager';
 import { WebhooksManager } from '@/components/settings/webhooks-manager';
 import { ApiTokensManager } from '@/components/settings/api-tokens-manager';
+import { TagsManager } from '@/components/settings/tags-manager';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
@@ -15,7 +16,7 @@ export default async function SettingsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Settings');
 
-  const [org, users, brands, assignments, webhooks, apiTokens] = await Promise.all([
+  const [org, users, brands, assignments, webhooks, apiTokens, tags] = await Promise.all([
     prisma.organization.findUniqueOrThrow({ where: { id: session.user.organizationId } }),
     prisma.user.findMany({
       where: { organizationId: session.user.organizationId },
@@ -36,6 +37,10 @@ export default async function SettingsPage() {
       where: { organizationId: session.user.organizationId },
       orderBy: { createdAt: 'desc' },
     }),
+    prisma.tag.findMany({
+      where: { organizationId: session.user.organizationId },
+      orderBy: { name: 'asc' },
+    }),
   ]);
 
   return (
@@ -49,6 +54,7 @@ export default async function SettingsPage() {
           <TabsTrigger value="assignments">Reps ↔ Marcas</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="api-tokens">API tokens</TabsTrigger>
+          <TabsTrigger value="tags">Etiquetas</TabsTrigger>
           <TabsTrigger value="billing" asChild>
             <Link href="/settings/billing">Billing</Link>
           </TabsTrigger>
@@ -90,6 +96,10 @@ export default async function SettingsPage() {
 
         <TabsContent value="api-tokens" className="space-y-4">
           <ApiTokensManager tokens={apiTokens} />
+        </TabsContent>
+
+        <TabsContent value="tags" className="space-y-4">
+          <TagsManager tags={tags} />
         </TabsContent>
       </Tabs>
     </div>

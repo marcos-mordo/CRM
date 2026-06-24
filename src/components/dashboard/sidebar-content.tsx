@@ -29,6 +29,7 @@ import {
   Trophy,
   CalendarDays,
   FileBarChart,
+  MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -58,6 +59,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/pipeline', icon: Kanban, labelKey: 'pipeline' },
         { href: '/tasks', icon: CheckSquare, labelKey: 'tasks' },
         { href: '/calendar', icon: CalendarDays, labelKey: 'calendar' },
+        { href: '/chat', icon: MessageCircle, labelKey: 'chat' },
       ],
     },
     {
@@ -84,6 +86,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       items: [
         { href: '/campaigns', icon: Mail, labelKey: 'campaigns' },
         { href: '/lists', icon: List, labelKey: 'lists' },
+        { href: '/email-templates', icon: FileText, labelKey: 'emailTemplates' },
       ],
     },
     {

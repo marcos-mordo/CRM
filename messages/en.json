@@ -98,7 +98,9 @@
     "auditLog": "Audit log",
     "myDashboard": "My panel",
     "calendar": "Calendar",
-    "reports": "Reports"
+    "reports": "Reports",
+    "emailTemplates": "Email templates",
+    "chat": "Team chat"
   },
   "Dashboard": {
     "title": "Dashboard",

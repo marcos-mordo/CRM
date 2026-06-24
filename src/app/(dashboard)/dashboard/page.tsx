@@ -10,6 +10,8 @@ import { SalesChart } from '@/components/dashboard/sales-chart';
 import { PipelineChart } from '@/components/dashboard/pipeline-chart';
 import { OnboardingCard } from '@/components/dashboard/onboarding-card';
 import { AiInsightsWidget } from '@/components/dashboard/ai-insights-widget';
+import { YoyComparison } from '@/components/dashboard/yoy-comparison';
+import { TeamActivityFeed } from '@/components/dashboard/team-activity-feed';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { isAIConfigured } from '@/lib/ai';
@@ -24,6 +26,40 @@ export default async function DashboardPage() {
   const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const endOfDay = new Date(startOfDay);
   endOfDay.setDate(endOfDay.getDate() + 1);
+
+  // Mismo mes año anterior para comparativa YoY
+  const startOfYoyMonth = new Date(now.getFullYear() - 1, now.getMonth(), 1);
+  const endOfYoyMonth = new Date(now.getFullYear() - 1, now.getMonth() + 1, 0, 23, 59, 59);
+
+  const [yoySalesNow, yoySalesPrev, yoyCustomersNow, yoyCustomersPrev, yoyCommNow, yoyCommPrev] = await Promise.all([
+    prisma.sale.aggregate({
+      where: { organizationId: orgId, status: { in: ['SIGNED', 'ACTIVE'] }, saleDate: { gte: startOfMonth } },
+      _sum: { total: true },
+      _count: true,
+    }),
+    prisma.sale.aggregate({
+      where: { organizationId: orgId, status: { in: ['SIGNED', 'ACTIVE'] }, saleDate: { gte: startOfYoyMonth, lte: endOfYoyMonth } },
+      _sum: { total: true },
+      _count: true,
+    }),
+    prisma.endCustomer.count({ where: { organizationId: orgId, createdAt: { gte: startOfMonth } } }),
+    prisma.endCustomer.count({ where: { organizationId: orgId, createdAt: { gte: startOfYoyMonth, lte: endOfYoyMonth } } }),
+    prisma.commission.aggregate({
+      where: { organizationId: orgId, status: 'PAID', paidAt: { gte: startOfMonth } },
+      _sum: { amount: true },
+    }),
+    prisma.commission.aggregate({
+      where: { organizationId: orgId, status: 'PAID', paidAt: { gte: startOfYoyMonth, lte: endOfYoyMonth } },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  const yoyMetrics = [
+    { label: 'Facturación', current: Number(yoySalesNow._sum.total ?? 0), previous: Number(yoySalesPrev._sum.total ?? 0), format: 'currency' as const },
+    { label: 'Ventas firmadas', current: yoySalesNow._count, previous: yoySalesPrev._count, format: 'number' as const },
+    { label: 'Nuevos clientes', current: yoyCustomersNow, previous: yoyCustomersPrev, format: 'number' as const },
+    { label: 'Comisiones pagadas', current: Number(yoyCommNow._sum.amount ?? 0), previous: Number(yoyCommPrev._sum.amount ?? 0), format: 'currency' as const },
+  ];
 
   const [
     // CRM core KPIs
@@ -185,6 +221,10 @@ export default async function DashboardPage() {
       <OnboardingCard steps={onboardingSteps} />
 
       <AiInsightsWidget enabled={isAIConfigured()} />
+
+      <YoyComparison metrics={yoyMetrics} />
+
+      <TeamActivityFeed organizationId={orgId} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {kpis.map((kpi) => {
