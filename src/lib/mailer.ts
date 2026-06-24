@@ -16,6 +16,7 @@ export async function sendMail(opts: {
   text?: string;
   from?: string;
   fromName?: string;
+  attachments?: Array<{ filename: string; content: Buffer | string; contentType?: string }>;
 }) {
   const fromAddress = opts.from || process.env.SMTP_FROM || 'no-reply@example.com';
   const from = opts.fromName ? `${opts.fromName} <${fromAddress}>` : fromAddress;
@@ -26,6 +27,7 @@ export async function sendMail(opts: {
     subject: opts.subject,
     html: opts.html,
     text: opts.text,
+    attachments: opts.attachments,
   });
 }
 
