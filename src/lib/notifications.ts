@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/prisma';
+import { sendTelegram } from '@/lib/telegram';
 import type { NotificationType } from '@prisma/client';
+
+// Tipos críticos que también se envían a Telegram si el user tiene chatId
+const TELEGRAM_CRITICAL: NotificationType[] = ['SALE_SIGNED', 'COMMISSION_PAID', 'COMMISSION_APPROVED'];
 
 interface NotifyInput {
   organizationId: string;
@@ -24,6 +28,18 @@ export async function notify(input: NotifyInput): Promise<void> {
         metadata: input.metadata,
       },
     });
+
+    // Telegram para eventos críticos
+    if (TELEGRAM_CRITICAL.includes(input.type)) {
+      const user = await prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { telegramChatId: true },
+      });
+      if (user?.telegramChatId) {
+        const text = `<b>${input.title}</b>${input.message ? `\n${input.message}` : ''}`;
+        await sendTelegram({ chatId: user.telegramChatId, text }).catch(() => {});
+      }
+    }
   } catch (err) {
     console.error('[notify] failed to create notification', input.type, err);
   }
