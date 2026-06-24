@@ -68,6 +68,8 @@ model Organization {
   emailTemplates     EmailTemplate[]
   conversations      Conversation[]
   leadScores         LeadScore[]
+  savedViews         SavedView[]
+  portalSessions     PortalSession[]
 
   // Stripe
   stripeCustomerId   String?  @unique
@@ -93,6 +95,8 @@ model User {
   role           Role     @default(AGENT)
   active         Boolean  @default(true)
   lastLoginAt    DateTime?
+  telegramChatId String?
+  superAdmin     Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -125,6 +129,7 @@ model User {
   chatParticipations ConversationParticipant[]
   chatMessages       Message[]
   emailTemplates     EmailTemplate[]
+  savedViews         SavedView[]
 
   @@index([organizationId])
   @@index([email])
@@ -1069,13 +1074,16 @@ model EndCustomer {
   gdprConsentAt    DateTime?
   marketingConsent Boolean   @default(false)
   notes         String?  @db.Text
+  // Portal del cliente: si está activo, puede pedir magic link a su email
+  portalEnabled    Boolean   @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  sales Sale[]
+  sales          Sale[]
+  portalSessions PortalSession[]
 
   @@index([organizationId])
   @@index([taxId])
@@ -1571,4 +1579,57 @@ model Message {
   author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
+}
+
+// ============================================
+// SAVED VIEWS: filtros guardables por usuario
+// ============================================
+
+enum SavedViewEntity {
+  SALES
+  LEADS
+  CUSTOMERS
+  TASKS
+  COMMISSIONS
+}
+
+model SavedView {
+  id        String          @id @default(cuid())
+  name      String
+  entity    SavedViewEntity
+  // Filtros como query string (?status=ACTIVE&brand=xxx)
+  query     String          @db.Text
+  shared    Boolean         @default(false) // visible para todos en la org
+  createdAt DateTime        @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, entity])
+  @@index([userId])
+}
+
+// ============================================
+// CUSTOMER PORTAL: sesiones del cliente final
+// ============================================
+
+model PortalSession {
+  id        String   @id @default(cuid())
+  // Token cifrado SHA-256 (la versión plain solo va en el magic link enviado por email)
+  tokenHash String   @unique
+  expiresAt DateTime
+  consumedAt DateTime? // si ya se usó para obtener cookie de sesión
+  createdAt DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  endCustomerId String
+  endCustomer   EndCustomer @relation(fields: [endCustomerId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([endCustomerId])
 }
