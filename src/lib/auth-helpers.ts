@@ -63,3 +63,16 @@ export function canManage(role: Role) {
 export function isAdmin(role: Role) {
   return role === 'OWNER' || role === 'ADMIN';
 }
+
+export function canWrite(role: Role) {
+  // VIEWER es solo lectura — todos los demás pueden escribir
+  return role !== 'VIEWER';
+}
+
+export async function requireWrite() {
+  const session = await requireAuth();
+  if (!canWrite(session.user.role)) {
+    throw new Error('Tu rol VIEWER es de solo lectura. Pide a un admin permisos para esta acción.');
+  }
+  return session;
+}

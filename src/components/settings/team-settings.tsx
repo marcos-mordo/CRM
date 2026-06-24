@@ -100,6 +100,7 @@ export function TeamSettings({ users, currentUserId }: { users: User[]; currentU
                     <SelectItem value="ADMIN">{t('Settings.roles.ADMIN')}</SelectItem>
                     <SelectItem value="MANAGER">{t('Settings.roles.MANAGER')}</SelectItem>
                     <SelectItem value="AGENT">{t('Settings.roles.AGENT')}</SelectItem>
+                    <SelectItem value="VIEWER">Solo lectura (auditor)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

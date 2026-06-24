@@ -98,7 +98,9 @@
     "auditLog": "Auditoría",
     "myDashboard": "Mi panel",
     "calendar": "Calendario",
-    "reports": "Reportes"
+    "reports": "Reportes",
+    "emailTemplates": "Plantillas email",
+    "chat": "Chat equipo"
   },
   "Dashboard": {
     "title": "Panel principal",

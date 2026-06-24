@@ -65,6 +65,9 @@ model Organization {
   apiTokens          ApiToken[]
   memberships        OrganizationMembership[]
   subscription       Subscription?
+  emailTemplates     EmailTemplate[]
+  conversations      Conversation[]
+  leadScores         LeadScore[]
 
   // Stripe
   stripeCustomerId   String?  @unique
@@ -77,6 +80,7 @@ enum Role {
   ADMIN
   MANAGER
   AGENT
+  VIEWER
 }
 
 model User {
@@ -116,6 +120,11 @@ model User {
   apiTokens        ApiToken[]
   memberships      OrganizationMembership[]
   twoFactor        UserTwoFactor?
+
+  // Chat interno
+  chatParticipations ConversationParticipant[]
+  chatMessages       Message[]
+  emailTemplates     EmailTemplate[]
 
   @@index([organizationId])
   @@index([email])
@@ -259,12 +268,31 @@ model Lead {
   ownerId String?
   owner   User?   @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
-  activities Activity[]
-  tasks      Task[]
+  activities  Activity[]
+  tasks       Task[]
+  aiScore     LeadScore?
 
   @@index([organizationId])
   @@index([status])
   @@index([ownerId])
+}
+
+// Score AI calculado por Claude
+model LeadScore {
+  id          String   @id @default(cuid())
+  probability Int      // 0-100
+  reasoning   String   @db.Text
+  suggestion  String   @db.Text
+  priority    String   // "HIGH" | "MEDIUM" | "LOW"
+  computedAt  DateTime @default(now())
+
+  leadId String @unique
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
 
 // ============================================
@@ -1469,4 +1497,78 @@ model UserTwoFactor {
 
   userId String @unique
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// PLANTILLAS de email reutilizables
+// ============================================
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  subject     String
+  htmlContent String   @db.Text
+  category    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId])
+}
+
+// ============================================
+// CHAT INTERNO entre miembros
+// ============================================
+
+model Conversation {
+  id        String   @id @default(cuid())
+  title     String?  // null = DM 1:1, string = grupo
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  participants ConversationParticipant[]
+  messages     Message[]
+
+  @@index([organizationId])
+}
+
+model ConversationParticipant {
+  id              String    @id @default(cuid())
+  joinedAt        DateTime  @default(now())
+  lastReadAt      DateTime?
+  // muted: silenciar notificaciones de esta conversación
+  muted           Boolean   @default(false)
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  editedAt  DateTime?
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
 }

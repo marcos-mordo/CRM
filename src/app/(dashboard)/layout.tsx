@@ -1,6 +1,8 @@
 import { requireAuth } from '@/lib/auth-helpers';
 import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
+import { ViewerBanner } from '@/components/dashboard/viewer-banner';
+import { KeyboardShortcuts } from '@/components/dashboard/keyboard-shortcuts';
 import { SessionProvider } from 'next-auth/react';
 import { listMyOrganizations } from '@/lib/current-org';
 
@@ -28,7 +30,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
             organizations={organizations}
             currentOrgId={session.user.organizationId}
           />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4">
+            <ViewerBanner role={(session.user as any).role} />
+            {children}
+          </main>
+          <KeyboardShortcuts />
         </div>
       </div>
     </SessionProvider>

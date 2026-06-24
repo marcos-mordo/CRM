@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { LeadDialog } from './lead-dialog';
-import { ArrowRightCircle, Edit, MoreHorizontal, Search, Trash2 } from 'lucide-react';
+import { ArrowRightCircle, Edit, MoreHorizontal, Search, Sparkles, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { convertLead, deleteLead } from '@/app/(dashboard)/leads/actions';
+import { scoreAllLeadsAction, scoreLeadAction } from '@/app/(dashboard)/leads/score-actions';
 import type { Lead, LeadStatus, User } from '@prisma/client';
 
 type Row = Lead & { owner: User | null };
@@ -74,6 +75,30 @@ export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
     });
   };
 
+  const handleScore = (id: string) => {
+    startTransition(async () => {
+      try {
+        const res = await scoreLeadAction(id);
+        toast.success(`Score: ${res.result.probability}% (${res.result.priority})`);
+        router.refresh();
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    });
+  };
+
+  const handleScoreAll = () => {
+    startTransition(async () => {
+      try {
+        const res = await scoreAllLeadsAction();
+        toast.success(`${res.scored} de ${res.total} leads puntuados`);
+        router.refresh();
+      } catch (e: any) {
+        toast.error(e.message);
+      }
+    });
+  };
+
   return (
     <>
       <div className="p-4 border-b flex items-center gap-3 flex-wrap">
@@ -93,6 +118,9 @@ export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
             </Button>
           ))}
         </div>
+        <Button size="sm" variant="outline" onClick={handleScoreAll} className="text-purple-600 border-purple-300">
+          <Sparkles className="h-3.5 w-3.5" /> Puntuar con AI
+        </Button>
       </div>
 
       <Table>
@@ -145,6 +173,9 @@ export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setEditing(l)}>
                       <Edit className="h-4 w-4" /> {t('Common.edit')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleScore(l.id)}>
+                      <Sparkles className="h-4 w-4" /> Puntuar con AI
                     </DropdownMenuItem>
                     {l.status !== 'CONVERTED' && (
                       <DropdownMenuItem onClick={() => handleConvert(l.id)}>
