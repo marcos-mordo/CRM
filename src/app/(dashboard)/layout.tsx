@@ -3,8 +3,11 @@ import { Sidebar } from '@/components/dashboard/sidebar';
 import { Topbar } from '@/components/dashboard/topbar';
 import { ViewerBanner } from '@/components/dashboard/viewer-banner';
 import { KeyboardShortcuts } from '@/components/dashboard/keyboard-shortcuts';
+import { AiChatBubble } from '@/components/ai/ai-chat-bubble';
+import { MobileBottomNav } from '@/components/dashboard/mobile-bottom-nav';
 import { SessionProvider } from 'next-auth/react';
 import { listMyOrganizations } from '@/lib/current-org';
+import { isAIConfigured } from '@/lib/ai';
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAuth();
@@ -30,11 +33,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             organizations={organizations}
             currentOrgId={session.user.organizationId}
           />
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-4 pb-20 lg:pb-8">
             <ViewerBanner role={(session.user as any).role} />
             {children}
           </main>
           <KeyboardShortcuts />
+          <AiChatBubble enabled={isAIConfigured()} />
+          <MobileBottomNav />
         </div>
       </div>
     </SessionProvider>
