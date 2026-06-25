@@ -693,6 +693,19 @@ model Campaign {
   recipientsCount Int        @default(0)
   openedCount Int            @default(0)
   clickedCount Int           @default(0)
+
+  // A/B testing
+  abEnabled     Boolean   @default(false)
+  abSubjectB    String?
+  abHtmlB       String?   @db.Text
+  recipientsA   Int       @default(0)
+  recipientsB   Int       @default(0)
+  openedA       Int       @default(0)
+  openedB       Int       @default(0)
+  clickedA      Int       @default(0)
+  clickedB      Int       @default(0)
+  winnerVariant String?
+
   createdAt   DateTime       @default(now())
 
   organizationId String
@@ -720,6 +733,7 @@ model CampaignList {
 model EmailTracking {
   id         String    @id @default(cuid())
   email      String
+  variant    String?   // "A" o "B" si la campaña es A/B
   sentAt     DateTime  @default(now())
   openedAt   DateTime?
   clickedAt  DateTime?

@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CheckCircle, Download, Eye, MoreHorizontal, RotateCcw, Search, Trash2, XCircle } from 'lucide-react';
+import { CheckCircle, Download, Eye, MoreHorizontal, RotateCcw, Search, Share2, Trash2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { deleteSale, setSaleStatus } from '@/app/(dashboard)/sales-orders/actions';
+import { deleteSale, getPublicShareUrl, setSaleStatus } from '@/app/(dashboard)/sales-orders/actions';
 import type { Brand, EndCustomer, Sale, SaleStatus, User } from '@prisma/client';
 
 type Row = Sale & { brand: Brand; endCustomer: EndCustomer; representative: User };
@@ -66,10 +66,24 @@ export function SalesTable({ sales }: { sales: Row[] }) {
   const remove = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;
     startTransition(async () => {
-      await deleteSale(id);
-      toast.success(t('Common.deleted'));
-      router.refresh();
+      try {
+        await deleteSale(id);
+        toast.success(t('Common.deleted'));
+        router.refresh();
+      } catch (e: any) {
+        toast.error(e.message);
+      }
     });
+  };
+
+  const share = async (id: string) => {
+    try {
+      const url = await getPublicShareUrl(id);
+      await navigator.clipboard.writeText(url);
+      toast.success('Enlace copiado al portapapeles', { description: url });
+    } catch (e: any) {
+      toast.error('No se pudo generar el enlace: ' + e.message);
+    }
   };
 
   return (
@@ -167,6 +181,10 @@ export function SalesTable({ sales }: { sales: Row[] }) {
                         <RotateCcw className="h-4 w-4" /> Reembolsar
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => share(s.id)}>
+                      <Share2 className="h-4 w-4" /> Copiar enlace público
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => remove(s.id)} className="text-destructive">
                       <Trash2 className="h-4 w-4" /> {t('Common.delete')}

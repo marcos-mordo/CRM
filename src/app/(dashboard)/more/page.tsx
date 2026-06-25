@@ -22,6 +22,7 @@ export default async function MorePage() {
         { href: '/tasks', icon: CheckSquare, label: 'Tareas' },
         { href: '/calendar', icon: CalendarDays, label: 'Calendario' },
         { href: '/chat', icon: MessageCircle, label: 'Chat equipo' },
+        { href: '/end-customers/map', icon: Building2, label: 'Mapa clientes' },
       ],
     },
     {

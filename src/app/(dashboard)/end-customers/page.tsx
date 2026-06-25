@@ -2,7 +2,9 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
-import { UserCheck } from 'lucide-react';
+import { UserCheck, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { EndCustomersTable } from '@/components/end-customers/end-customers-table';
 import { EndCustomerDialog } from '@/components/end-customers/end-customer-dialog';
@@ -22,6 +24,11 @@ export default async function EndCustomersPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${customers.length} clientes`}>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/end-customers/map">
+            <MapPin className="h-4 w-4" /> Mapa
+          </Link>
+        </Button>
         <ImportCsvButton />
         <EndCustomerDialog />
       </PageHeader>
