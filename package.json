@@ -22,6 +22,7 @@
     "electron:build:win": "electron-builder --win --x64",
     "electron:build:mac": "electron-builder --mac",
     "electron:build:linux": "electron-builder --linux",
+    "electron:publish": "electron-builder --publish always",
     "cap:add:android": "cap add android",
     "cap:sync": "cap sync",
     "cap:open:android": "cap open android",
@@ -81,6 +82,12 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "BrandHub"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "marcos-mordo",
+      "repo": "CRM",
+      "releaseType": "release"
     }
   },
   "prisma": {
@@ -112,6 +119,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.0.0",
     "date-fns": "^4.1.0",
+    "electron-updater": "^6.8.9",
     "lucide-react": "^0.456.0",
     "next": "15.0.3",
     "next-auth": "5.0.0-beta.25",

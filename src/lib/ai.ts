@@ -100,6 +100,253 @@ export async function scoreLead(ctx: LeadScoreContext): Promise<{ probability: n
   };
 }
 
+// ============================================
+// CHAT CONVERSACIONAL con tool use
+// ============================================
+
+import type { Prisma } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+
+const CHAT_SYSTEM = `Eres el asistente de BrandHub, un CRM multi-marca. Respondes preguntas del usuario sobre SUS datos.
+Tienes acceso a 6 herramientas para consultar la base de datos. Úsalas cuando el usuario pregunte por números, listas o estadísticas.
+Si la respuesta requiere un cálculo, usa la herramienta y luego explica el resultado.
+Sé conciso (máx 150 palabras), en español castellano neutro. Usa **negritas** para destacar.
+NO inventes datos. Si una herramienta falla o no hay datos, dilo.`;
+
+const TOOLS: any[] = [
+  {
+    name: 'get_sales_summary',
+    description: 'Resumen de ventas en un periodo. Devuelve count, total, comisión total.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days: { type: 'number', description: 'Días hacia atrás desde hoy (1-365)' },
+        status: { type: 'string', enum: ['ALL', 'SIGNED', 'ACTIVE', 'DRAFT'] },
+      },
+      required: ['days'],
+    },
+  },
+  {
+    name: 'get_top_reps',
+    description: 'Top N representantes por comisión generada en periodo.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number', description: '1-10' },
+        days: { type: 'number', description: 'Días hacia atrás' },
+      },
+      required: ['limit', 'days'],
+    },
+  },
+  {
+    name: 'get_top_brands',
+    description: 'Top N marcas por facturación.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        limit: { type: 'number' },
+        days: { type: 'number' },
+      },
+      required: ['limit', 'days'],
+    },
+  },
+  {
+    name: 'count_pending',
+    description: 'Cuenta entidades pendientes (tareas, ventas borrador, comisiones por aprobar).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        what: { type: 'string', enum: ['tasks', 'sales_unsigned', 'commissions_pending'] },
+      },
+      required: ['what'],
+    },
+  },
+  {
+    name: 'find_customer',
+    description: 'Busca un cliente final por nombre, email o DNI/CIF. Devuelve datos básicos + count de ventas.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string' },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'get_leads_overdue',
+    description: 'Leads sin actividad en N días.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        days: { type: 'number' },
+      },
+      required: ['days'],
+    },
+  },
+];
+
+async function executeTool(name: string, args: any, orgId: string): Promise<string> {
+  try {
+    const now = new Date();
+    if (name === 'get_sales_summary') {
+      const days = Math.min(365, Math.max(1, args.days));
+      const since = new Date(now.getTime() - days * 86400000);
+      const status = args.status;
+      const where: Prisma.SaleWhereInput = {
+        organizationId: orgId,
+        saleDate: { gte: since },
+        ...(status && status !== 'ALL' ? { status: status as any } : {}),
+      };
+      const agg = await prisma.sale.aggregate({
+        where,
+        _sum: { total: true, totalCommission: true },
+        _count: true,
+      });
+      return JSON.stringify({
+        days,
+        status: status ?? 'ALL',
+        sales_count: agg._count,
+        total_revenue: Number(agg._sum.total ?? 0),
+        total_commission: Number(agg._sum.totalCommission ?? 0),
+      });
+    }
+    if (name === 'get_top_reps') {
+      const limit = Math.min(10, Math.max(1, args.limit));
+      const since = new Date(now.getTime() - Math.min(365, Math.max(1, args.days)) * 86400000);
+      const grouped = await prisma.commission.groupBy({
+        by: ['representativeId'],
+        where: { organizationId: orgId, status: { in: ['APPROVED', 'PAID'] }, createdAt: { gte: since } },
+        _sum: { amount: true },
+        _count: true,
+        orderBy: { _sum: { amount: 'desc' } },
+        take: limit,
+      });
+      const users = await prisma.user.findMany({
+        where: { id: { in: grouped.map((g) => g.representativeId) } },
+        select: { id: true, name: true },
+      });
+      return JSON.stringify(grouped.map((g) => ({
+        name: users.find((u) => u.id === g.representativeId)?.name ?? '?',
+        commission_total: Number(g._sum.amount ?? 0),
+        sales_count: g._count,
+      })));
+    }
+    if (name === 'get_top_brands') {
+      const limit = Math.min(10, Math.max(1, args.limit));
+      const since = new Date(now.getTime() - Math.min(365, Math.max(1, args.days)) * 86400000);
+      const grouped = await prisma.sale.groupBy({
+        by: ['brandId'],
+        where: { organizationId: orgId, status: { in: ['SIGNED', 'ACTIVE'] }, saleDate: { gte: since } },
+        _sum: { total: true },
+        _count: true,
+        orderBy: { _sum: { total: 'desc' } },
+        take: limit,
+      });
+      const brands = await prisma.brand.findMany({
+        where: { id: { in: grouped.map((g) => g.brandId) } },
+        select: { id: true, name: true },
+      });
+      return JSON.stringify(grouped.map((g) => ({
+        name: brands.find((b) => b.id === g.brandId)?.name ?? '?',
+        revenue: Number(g._sum.total ?? 0),
+        sales_count: g._count,
+      })));
+    }
+    if (name === 'count_pending') {
+      if (args.what === 'tasks') {
+        const n = await prisma.task.count({
+          where: { organizationId: orgId, status: { in: ['PENDING', 'IN_PROGRESS'] } },
+        });
+        return JSON.stringify({ count: n });
+      }
+      if (args.what === 'sales_unsigned') {
+        const n = await prisma.sale.count({
+          where: { organizationId: orgId, status: { in: ['DRAFT', 'PENDING_SIGN'] } },
+        });
+        return JSON.stringify({ count: n });
+      }
+      if (args.what === 'commissions_pending') {
+        const agg = await prisma.commission.aggregate({
+          where: { organizationId: orgId, status: { in: ['PENDING', 'APPROVED'] } },
+          _sum: { amount: true },
+          _count: true,
+        });
+        return JSON.stringify({ count: agg._count, amount: Number(agg._sum.amount ?? 0) });
+      }
+    }
+    if (name === 'find_customer') {
+      const q = String(args.query).trim();
+      const customers = await prisma.endCustomer.findMany({
+        where: {
+          organizationId: orgId,
+          OR: [
+            { firstName: { contains: q, mode: 'insensitive' } },
+            { lastName: { contains: q, mode: 'insensitive' } },
+            { companyName: { contains: q, mode: 'insensitive' } },
+            { email: { contains: q, mode: 'insensitive' } },
+            { taxId: { contains: q, mode: 'insensitive' } },
+          ],
+        },
+        take: 5,
+        include: { _count: { select: { sales: true } } },
+      });
+      return JSON.stringify(customers.map((c) => ({
+        id: c.id,
+        name: c.isCompany ? c.companyName : `${c.firstName ?? ''} ${c.lastName ?? ''}`.trim(),
+        taxId: c.taxId,
+        email: c.email,
+        sales_count: c._count.sales,
+      })));
+    }
+    if (name === 'get_leads_overdue') {
+      const days = Math.min(365, Math.max(1, args.days));
+      const since = new Date(now.getTime() - days * 86400000);
+      const n = await prisma.lead.count({
+        where: {
+          organizationId: orgId,
+          status: { in: ['NEW', 'CONTACTED'] },
+          updatedAt: { lt: since },
+        },
+      });
+      return JSON.stringify({ count: n, days_since_update: days });
+    }
+    return JSON.stringify({ error: 'unknown_tool' });
+  } catch (err: any) {
+    return JSON.stringify({ error: 'tool_failed', message: err?.message?.slice(0, 200) });
+  }
+}
+
+export async function chatWithAssistant(orgId: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
+  const client = getClient();
+  let messages: any[] = history.map((m) => ({ role: m.role, content: m.content }));
+
+  // Hasta 5 rondas de tool use
+  for (let round = 0; round < 5; round++) {
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 800,
+      system: [{ type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } }],
+      tools: TOOLS as any,
+      messages,
+    });
+
+    if (response.stop_reason === 'tool_use') {
+      const toolUses = response.content.filter((b: any) => b.type === 'tool_use');
+      const toolResults: any[] = [];
+      for (const tu of toolUses) {
+        const result = await executeTool((tu as any).name, (tu as any).input, orgId);
+        toolResults.push({ type: 'tool_result', tool_use_id: (tu as any).id, content: result });
+      }
+      messages = [...messages, { role: 'assistant', content: response.content }, { role: 'user', content: toolResults }];
+      continue;
+    }
+
+    const text = response.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
+    return text || 'Sin respuesta.';
+  }
+  return 'El asistente excedió el límite de pasos. Intenta una pregunta más simple.';
+}
+
 export async function generateInsights(ctx: InsightContext): Promise<string> {
   const client = getClient();
   const userPrompt = `Datos de "${ctx.orgName}" del ${ctx.period}:
