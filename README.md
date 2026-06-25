@@ -1,197 +1,273 @@
-# BrandHub
+# BrandHub — CRM multi-marca para agencias comerciales
 
-CRM multi-marca para **agencias comerciales** que representan varias empresas y venden sus servicios a clientes finales.
+CRM de nivel producto, multi-tenant, vendible como SaaS o desplegable
+como app de escritorio/móvil. Diseñado para agencias que representan
+varias marcas y venden sus servicios a clientes finales.
 
-> **Caso típico:** una agencia de IT/ciberseguridad representa a 10+ marcas (CyberShield, CloudGuard, PenTestPro, SOCWatch, TrainSec…) y sus representantes venden licencias, auditorías, SOC gestionado y formación a empresas y autónomos, con firma digital en el sitio y comisión calculada automáticamente.
-
-Distribuible como **web + app de escritorio (Windows/macOS/Linux) + APK Android** desde un solo codebase.
-
-## Estado del proyecto
-
-| Capa | Estado |
-|---|---|
-| Modelo de datos completo (CRM Core + BrandHub) | ✅ |
-| Backend Next.js + Prisma + PostgreSQL embebido | ✅ |
-| Autenticación NextAuth + RBAC + multi-tenant | ✅ |
-| UI CRM Core (contactos, empresas, leads, pipeline, tareas, facturación, marketing, soporte) | ✅ |
-| UI BrandHub (marcas, catálogo, clientes finales, ventas con firma, comisiones) | ✅ |
-| Firma digital canvas + PDF contrato generado | ✅ |
-| Empaquetado Electron PC (.exe/.dmg/.AppImage) | ✅ |
-| Empaquetado Android APK con Capacitor | ✅ |
-| Despliegue cloud (Vercel + Neon) | ⏳ pendiente |
-| Sync offline (trabajo sin conexión) | ⏳ pendiente |
-
-## Funcionalidades BrandHub
-
-### Marcas representadas
-- Alta de marcas con razón social, CIF, contacto
-- Comisión por defecto configurable (% sobre venta / cantidad fija / escalonado)
-- Asignación de representantes a marcas (con override de comisión por rep)
-
-### Catálogo por marca
-Tipos predefinidos para IT/ciberseguridad:
-- Licencia software · Suscripción SaaS · Auditoría · Formación
-- Hardware · Servicio gestionado (MSSP/SOC) · Soporte · Consultoría · Personalizado
-
-Frecuencia de facturación: pago único / mensual / trimestral / anual.
-
-### Clientes finales (B2B y B2C)
-- Persona física o empresa
-- Captura RGPD obligatoria con fecha y opt-in marketing separado
-- Búsqueda por DNI/CIF/email
-
-### Venta con firma digital
-- Wizard 3 pasos: cliente → carrito → firma
-- Cálculo de comisión en vivo (la más específica gana: producto > marca)
-- Captura de firma manuscrita con canvas HTML5 (touch + ratón)
-- Genera PDF de contrato profesional con firma incrustada y bloque legal RGPD
-- Estados: Borrador / Pendiente firma / Firmada / Activa / Cancelada / Reembolsada
-
-### Comisiones
-- KPI Pendientes / Aprobadas / Pagadas
-- Flujo Pending → Approved → Paid (solo managers+)
-- Registro de método y referencia de pago
-- Auto-cancelación al reembolsar la venta
-
-## Stack tecnológico
-
-| Capa | Tecnología |
-|---|---|
-| Frontend | Next.js 15 + React 19 + TypeScript |
-| UI | Tailwind CSS + shadcn/ui + Recharts |
-| Backend | Next.js Server Actions + API Routes |
-| ORM | Prisma 5 |
-| Base de datos | PostgreSQL 18 (embebida con `embedded-postgres`) |
-| Auth | NextAuth v5 |
-| i18n | next-intl (Español + Inglés) |
-| Email | Nodemailer (SMTP) |
-| PDF | `@react-pdf/renderer` |
-| Firma digital | Canvas HTML5 con captura touch/mouse |
-| Empaquetado PC | Electron + electron-builder |
-| Empaquetado móvil | Capacitor (Android APK) |
-
-## Quick start (5 minutos)
-
-```bash
-# 1. Clonar y entrar
-git clone https://github.com/marcos-mordo/CRM.git brandhub
-cd brandhub
-
-# 2. Instalar dependencias
-npm install
-# (puede pedir --legacy-peer-deps; el .npmrc ya lo activa por defecto)
-
-# 3. Crear archivo .env con la URL de la DB local
-cp .env.example .env
-# Edita .env y pon:
-# DATABASE_URL="postgresql://brandhub:brandhub_dev_2026@localhost:5433/brandhub?schema=public"
-# NEXTAUTH_SECRET="genera-con-openssl-rand-base64-32"
-
-# 4. Arrancar PostgreSQL embebido (terminal 1, dejar abierta)
-npm run db:start
-
-# 5. Migrar y sembrar datos demo (terminal 2)
-npx prisma migrate deploy
-npm run db:seed
-
-# 6. Arrancar la app
-npm run dev
-
-# 7. Abrir http://localhost:3000 y entrar con:
-#    admin@acme.com  /  admin1234
+```
+[ Agencia ] → representa → [ Marca 1, Marca 2, … Marca N ]
+                                    ↓
+                            [ Catálogo, comisiones, contratos ]
+                                    ↓
+                      vende a [ Clientes finales ]
+                                    ↓
+                          [ Comisiones liquidadas al rep ]
 ```
 
-## Comandos útiles
+---
 
-| Comando | Para qué |
-|---|---|
-| `npm run dev` | Dev server Next.js (web) |
-| `npm run db:start` | PostgreSQL embebido local (puerto 5433) |
-| `npm run db:seed` | Cargar datos demo (resetea la DB) |
-| `npm run prisma:studio` | UI visual de la base de datos |
-| `npm run prisma:migrate` | Crear nueva migración |
-| `npm run electron:dev` | Backend + Electron en paralelo |
-| `npm run electron:build:win` | Generar instalador .exe Windows |
-| `npm run electron:build:mac` | Generar .dmg macOS |
-| `npm run cap:add:android` | Inicializar proyecto Android |
-| `npm run android:build` | Generar APK Debug |
+## 📦 Stack
 
-Para empaquetado y distribución completa ver [PACKAGING.md](PACKAGING.md).
+- **Next.js 15** (App Router · Server Actions · Server Components)
+- **TypeScript** estricto
+- **Prisma 5** + **PostgreSQL** (embebido para dev, cualquier Postgres en prod)
+- **NextAuth v5** (Credentials + Google + Microsoft Entra ID)
+- **2FA TOTP** (otpauth + qrcode + backup codes)
+- **Tailwind CSS** + **shadcn/ui**
+- **Stripe** (checkout + webhook)
+- **Anthropic Claude** (asistente conversacional con tool use, scoring de leads)
+- **@react-pdf/renderer** (contratos + reportes ejecutivos)
+- **Nodemailer** (transaccionales + campañas con tracking pixel)
+- **Electron** + **electron-updater** (desktop con auto-update)
+- **Capacitor** (Android APK)
+- **next-intl** (ES / EN cookie-based)
+- **SSE** para notificaciones en tiempo real
+- **IndexedDB** para sync offline
 
-## Credenciales demo
+---
 
-Tras el seed se crean estos usuarios:
+## ⚡ Instalación rápida
 
-| Email | Contraseña | Rol |
-|---|---|---|
-| `admin@acme.com` | `admin1234` | Propietario |
-| `maria@acme.com` | `admin1234` | Manager |
-| `luis@acme.com` | `admin1234` | Agente comercial |
+```bash
+git clone https://github.com/marcos-mordo/CRM.git brandhub
+cd brandhub
+npm install            # con .npmrc legacy-peer-deps
+npm run db:start       # arranca Postgres embebido en :5433 (deja abierto)
+npm run setup          # prisma generate + db push + seed demo
+npm run dev            # http://localhost:3000
+```
 
-Y datos BrandHub:
-- 5 marcas (CyberShield, CloudGuard, PenTestPro, SOCWatch, TrainSec)
-- 8 productos en catálogo
-- 4 clientes finales (3 empresas + 1 persona física, todos con RGPD)
-- 2 ventas firmadas (una pagada, otra pendiente de aprobar comisión)
+**Credenciales demo:** `admin@brandhub.demo` / `Demo1234!`
 
-⚠️ **Cambia o elimina estos usuarios antes de producción.**
+---
 
-## Estructura del proyecto
+## 🚀 Empaquetado
+
+### Desktop (Windows / macOS / Linux)
+```bash
+npm run build
+npm run electron:build:win    # → dist-electron/BrandHub-Setup-1.0.0.exe
+npm run electron:build:mac    # → dist-electron/*.dmg
+npm run electron:build:linux  # → dist-electron/*.AppImage
+```
+
+### Auto-update Electron
+Publica releases a GitHub con `GH_TOKEN` configurado:
+```bash
+GH_TOKEN=ghp_xxx npm run electron:publish
+```
+La app comprueba updates al arrancar y cada 6 h. Pregunta
+"Reiniciar ahora / Más tarde" al usuario cuando hay nueva versión.
+
+### Android APK
+```bash
+npm run cap:add:android   # primera vez
+npm run android:build     # → android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+### Producción Docker
+```bash
+docker compose up -d --build
+```
+
+---
+
+## 🧩 Features (87 entregadas)
+
+### CRM Core
+- Multi-tenant con `organizationId` en todas las tablas
+- RBAC con 5 roles (OWNER, ADMIN, MANAGER, AGENT, VIEWER)
+- Contactos, Empresas, Leads, Pipeline Kanban, Deals, Tareas
+- Calendario visual (tareas + ventas)
+- Notas reutilizables, tags globales
+
+### BrandHub (agencia multi-marca)
+- Marcas con asignación a representantes
+- Catálogos por marca con productos, precios y reglas de comisión
+- Comisiones automáticas (% o fijo) al firmar venta
+- Plantillas de contrato editables con variables
+- Ventas con firma digital (canvas), bloqueo post-firma, PDF auto-generado
+
+### Ventas
+- Productos · Cotizaciones · Facturas
+- Importación CSV de clientes finales
+- Export CSV de ventas + comisiones
+- **Sync offline** con cola IndexedDB (vende sin internet, sube al volver)
+- **Link público** para compartir venta (read-only + PDF) por WhatsApp/email
+
+### Marketing
+- Listas + campañas email + plantillas
+- **A/B testing**: subject B + html B opcional, reparto 50/50, métricas separadas
+- Tracking pixel de apertura + redirección de clics
+- Selección automática de variante ganadora por CTR
+
+### Soporte
+- Tickets con estados, prioridades, asignación
+- Base de conocimiento
+
+### IA (Claude)
+- **Asistente conversacional** flotante con tool use:
+  resumen ventas, ranking reps/marcas, comisiones pendientes,
+  búsqueda clientes, leads sin actividad
+- **Scoring automático** de leads con razones explicadas
+- Prompt cacheado (ephemeral) para reducir coste
+
+### Comunicaciones
+- Email transaccional (SMTP)
+- **WhatsApp helper** (deep-links wa.me)
+- **Telegram bot** para notificaciones críticas (venta firmada, comisión pagada)
+- SSE in-app + notificaciones persistentes
+
+### SaaS / Multi-org
+- Multi-org switcher real (memberships con rol por org)
+- Stripe billing (checkout + webhook)
+- Subscriptions con estados y plan
+- API REST pública con API tokens (sha256, scopes, último uso)
+- Webhooks salientes con HMAC-SHA256 + historial + retry
+- Webhook entrante para captura de leads externos
+- **Dashboard super-admin** (salud SaaS: orgs, churn, ARR)
+
+### Auth & Seguridad
+- 2FA TOTP (Google Authenticator / Authy / 1Password) + backup codes
+- SSO Google + Microsoft Entra ID
+- Magic-link auth para **Customer Portal** (cliente final ve sus contratos)
+- Headers de seguridad (HSTS, CSP, X-Frame-Options, etc.)
+- Rate limiting básico (in-memory)
+- Audit log de acciones críticas, página de auditoría filtrable
+- **Bloqueo de edición/borrado de ventas firmadas** (integridad legal)
+- Rol VIEWER de solo lectura para auditor externo
+- Banner explícito cuando estás en modo VIEWER
+
+### UX
+- **Búsqueda global Cmd+K** (rutas + entidades)
+- **Keyboard shortcuts globales** (vim-style: `g d` dashboard, `g s` ventas…)
+- **Modo presentación** sin sidebar/topbar (`/present`)
+- **Mapa de clientes** geolocalizados (Leaflet) con popup
+- **Bottom navigation** móvil + página `/more` con todas las secciones
+- AI chat bubble flotante (gradient purple→pink)
+- Vista kanban toggleable para tareas
+- **Saved views** (filtros guardables por usuario)
+- Tour interactivo onboarding
+- i18n ES / EN cookie-based
+- Tema claro/oscuro
+
+### Reportes
+- **PDF mensual ejecutivo** scheduled por email
+- Comparativa YoY en dashboard
+- Activity feed del equipo
+- Dashboard personal del representante (`/me`)
+- Email digest matinal
+
+### DevOps
+- CI GitHub Actions (lint + typecheck + build)
+- Dockerfile multistage standalone
+- docker-compose con DB + app
+- Health endpoint
+- Logo BrandHub real + favicon + PWA manifest
+
+---
+
+## 🔑 Variables de entorno
+
+Mínimo viable (`.env`):
+```
+DATABASE_URL=postgresql://brandhub:brandhub_dev_2026@localhost:5433/brandhub?schema=public
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=cambia-esto-por-algo-random
+```
+
+Opcional según feature:
+```
+ANTHROPIC_API_KEY=sk-ant-xxx           # AI chat + scoring
+STRIPE_SECRET_KEY=sk_live_xxx          # billing
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+GOOGLE_CLIENT_ID=...                   # SSO
+GOOGLE_CLIENT_SECRET=...
+AZURE_AD_CLIENT_ID=...                 # SSO Microsoft
+AZURE_AD_CLIENT_SECRET=...
+AZURE_AD_TENANT_ID=...
+SMTP_HOST=smtp.example.com             # email
+SMTP_PORT=587
+SMTP_USER=...
+SMTP_PASSWORD=...
+TELEGRAM_BOT_TOKEN=...                 # notificaciones
+TELEGRAM_WEBHOOK_SECRET=...
+GH_TOKEN=...                           # publicar updates Electron
+```
+
+---
+
+## 📐 Arquitectura
 
 ```
 src/
 ├── app/
-│   ├── (auth)/                  # Login y registro
-│   ├── (dashboard)/             # Layout autenticado
-│   │   ├── dashboard/           # KPIs y gráficos
-│   │   ├── contacts/            # CRM interno
-│   │   ├── companies/
-│   │   ├── leads/
-│   │   ├── pipeline/            # Kanban deals
-│   │   ├── tasks/
-│   │   ├── brands/              # 🆕 BrandHub: marcas representadas
-│   │   ├── catalog/             # 🆕 productos por marca
-│   │   ├── end-customers/       # 🆕 clientes finales con RGPD
-│   │   ├── sales-orders/        # 🆕 ventas con firma
-│   │   ├── commissions/         # 🆕 cobros a representantes
-│   │   ├── products/            # Catálogo interno (legacy)
-│   │   ├── quotes/ invoices/    # Facturación interna
-│   │   ├── campaigns/ lists/    # Email marketing
-│   │   ├── tickets/ knowledge/  # Soporte
-│   │   └── settings/            # Equipo + organización
-│   └── api/                     # Auth, PDF endpoints
+│   ├── (dashboard)/           # rutas autenticadas con sidebar
+│   ├── api/                   # routes (REST pública, webhooks, AI, SSE)
+│   ├── portal/                # Customer Portal (magic-link auth)
+│   ├── share/sale/[token]/    # link público de venta + PDF
+│   ├── login, register, …
+│   └── layout.tsx
 ├── components/
-│   ├── ui/                      # Primitivos shadcn
-│   ├── dashboard/               # Layout shell
-│   ├── brands/ catalog/         # 🆕 BrandHub UI
-│   ├── end-customers/ sales/
-│   ├── commissions/
-│   └── …                        # CRM core
-├── lib/                         # utils, prisma, auth, mailer, PDFs
-└── i18n/                        # Mensajes ES/EN
-electron/                        # main.js para wrap PC
-capacitor.config.ts              # Config Android wrap
-scripts/db-start.ts              # PostgreSQL embebido
+│   ├── ui/                    # shadcn primitives
+│   ├── dashboard/             # sidebar, topbar, AI bubble, mobile-nav
+│   ├── sales/, brands/, …     # por dominio
+│   └── ai/                    # chat bubble
+├── lib/
+│   ├── prisma.ts, auth.ts, auth.config.ts
+│   ├── ai.ts                  # Claude + tool use
+│   ├── stripe.ts, telegram.ts, mailer.ts
+│   ├── webhooks.ts, notifications.ts
+│   ├── public-share.ts        # HMAC tokens venta compartida
+│   └── portal-auth.ts         # JWT cookie cliente final
+└── i18n/                      # ES + EN
 prisma/
-├── schema.prisma                # 11 modelos CRM + 11 modelos BrandHub
-├── migrations/
-└── seed.ts                      # Datos demo completos
-messages/es.json / en.json       # i18n
+├── schema.prisma              # 37 modelos
+└── seed.ts                    # datos demo
+electron/main.js               # auto-update + window
 ```
-
-## Próximos pasos para producción
-
-1. **Desplegar backend en nube** (Vercel + Neon) → permite que tus amigos/clientes usen la app desde sus dispositivos
-2. **Generar APK firmado** + subir a Play Store o distribuir por web
-3. **Firmar Electron .exe** con certificado Code Signing (evita warnings Windows SmartScreen)
-4. **Implementar sync offline** (IndexedDB + cola de mutaciones) para reps en zonas sin cobertura
-5. **Crear plantillas de contrato editables** desde UI (módulo ContractTemplate ya en schema)
-6. **Auto-update Electron** con `electron-updater`
-
-## Licencia
-
-Software propietario. Todos los derechos reservados.
 
 ---
 
-**BrandHub** — Hub de marcas para agencias comerciales
+## 📊 Endpoints REST públicos
+
+Requieren header `Authorization: Bearer brh_xxx` (genera tokens en `/settings`).
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET  | `/api/v1/sales`             | Lista ventas org |
+| POST | `/api/v1/sales`             | Crea venta |
+| GET  | `/api/v1/contacts`          | Lista contactos |
+| POST | `/api/v1/inbound/leads`     | Captura lead desde tu web |
+| GET  | `/api/v1/me`                | Info del token |
+
+---
+
+## 🧪 Tests rápidos
+
+| Caso | Cómo |
+|---|---|
+| Login | `admin@brandhub.demo` / `Demo1234!` |
+| Crear venta | `/sales-orders/new`, firma con dedo o ratón |
+| Compartir venta | dropdown ⋯ → "Copiar enlace público" |
+| AI chat | bubble morado abajo derecha → "¿cuánto vendí?" |
+| Mapa | `/end-customers/map` |
+| 2FA | `/settings/security` → "Activar 2FA" |
+| Customer Portal | `/portal/login` con email del cliente final |
+| Super-admin | `/super-admin` (solo OWNER) |
+
+---
+
+## 📜 Licencia
+
+Propietario. Marcos Morales © 2026.

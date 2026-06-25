@@ -180,8 +180,31 @@ export async function createSale(input: z.infer<typeof saleSchema>) {
   return { ok: true, id: sale.id, number: sale.number };
 }
 
+// Transiciones válidas: una vez firmada/activa, no se puede volver a DRAFT
+const VALID_TRANSITIONS: Record<SaleStatus, SaleStatus[]> = {
+  DRAFT: ['PENDING_SIGN', 'SIGNED', 'CANCELLED'],
+  PENDING_SIGN: ['SIGNED', 'CANCELLED'],
+  SIGNED: ['ACTIVE', 'CANCELLED', 'REFUNDED'],
+  ACTIVE: ['REFUNDED'],
+  CANCELLED: [],
+  REFUNDED: [],
+};
+
 export async function setSaleStatus(id: string, status: SaleStatus, cancelReason?: string) {
   const session = await requireAuth();
+  if (session.user.role === 'VIEWER') throw new Error('Tu rol no puede modificar ventas');
+
+  const existing = await prisma.sale.findFirstOrThrow({
+    where: { id, organizationId: session.user.organizationId },
+    select: { status: true },
+  });
+
+  if (!VALID_TRANSITIONS[existing.status].includes(status)) {
+    throw new Error(
+      `No se puede pasar de "${existing.status}" a "${status}". Una venta firmada o activa solo puede cancelarse o reembolsarse.`
+    );
+  }
+
   const data: any = { status };
   if (status === 'ACTIVE') data.activatedAt = new Date();
   if (status === 'CANCELLED') {
@@ -217,8 +240,29 @@ export async function setSaleStatus(id: string, status: SaleStatus, cancelReason
   return { ok: true };
 }
 
+export async function getPublicShareUrl(id: string): Promise<string> {
+  const session = await requireAuth();
+  const sale = await prisma.sale.findFirstOrThrow({
+    where: { id, organizationId: session.user.organizationId },
+    select: { id: true },
+  });
+  const { generateShareToken } = await import('@/lib/public-share');
+  const token = generateShareToken(sale.id);
+  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+  return `${baseUrl}/share/sale/${token}`;
+}
+
 export async function deleteSale(id: string) {
   const session = await requireAuth();
+  if (session.user.role === 'VIEWER') throw new Error('Tu rol no puede eliminar ventas');
+  // Solo permitimos borrar borradores. Firmadas → solo cancelar (deja registro).
+  const sale = await prisma.sale.findFirstOrThrow({
+    where: { id, organizationId: session.user.organizationId },
+    select: { status: true, number: true },
+  });
+  if (sale.status !== 'DRAFT' && session.user.role !== 'OWNER') {
+    throw new Error(`No puedes eliminar la venta ${sale.number} en estado ${sale.status}. Cancélala en su lugar.`);
+  }
   await prisma.sale.delete({ where: { id, organizationId: session.user.organizationId } });
   revalidatePath('/sales-orders');
   revalidatePath('/commissions');
