@@ -53,13 +53,25 @@ npm run dev            # http://localhost:3000
 
 ## 🚀 Empaquetado
 
-### Desktop (Windows / macOS / Linux)
+### Desktop autocontenido (Windows / macOS / Linux)
 ```bash
 npm run build
-npm run electron:build:win    # → dist-electron/BrandHub-Setup-1.0.0.exe
+npm run electron:build:win    # → dist-electron/BrandHub-Setup-1.0.0.exe (~194 MB)
 npm run electron:build:mac    # → dist-electron/*.dmg
 npm run electron:build:linux  # → dist-electron/*.AppImage
 ```
+
+El instalador `.exe` incluye Next.js standalone server + Prisma client
+embebidos en `resources/app`. Al arrancar:
+
+1. Detecta puerto libre desde 3000
+2. Levanta `next start` como proceso hijo (`ELECTRON_RUN_AS_NODE=1`)
+3. Espera al `/api/health`
+4. Abre la ventana apuntando a `http://127.0.0.1:{puerto}`
+
+Si configuras `DATABASE_URL` apuntando a un host externo, usa esa DB.
+Si no, arranca Postgres embebido en `:5433` automáticamente. Al cerrar
+la ventana, ambos procesos hijos se matan.
 
 ### Auto-update Electron
 Publica releases a GitHub con `GH_TOKEN` configurado:
@@ -70,10 +82,23 @@ La app comprueba updates al arrancar y cada 6 h. Pregunta
 "Reiniciar ahora / Más tarde" al usuario cuando hay nueva versión.
 
 ### Android APK
+
+Requiere Android SDK instalado. Ver [scripts/install-android-sdk.md](scripts/install-android-sdk.md).
+
 ```bash
-npm run cap:add:android   # primera vez
-npm run android:build     # → android/app/build/outputs/apk/debug/app-debug.apk
+# Primera vez (ya hecho en este repo):
+npm run cap:add:android
+
+# Cada build:
+cp android/local.properties.example android/local.properties
+# (editar local.properties con tu sdk.dir)
+npm run android:build
+# → android/app/build/outputs/apk/debug/app-debug.apk
 ```
+
+El APK es un **cliente** que apunta al servidor Next del PC. Edita
+`capacitor.config.ts` con la IP LAN de tu PC (`http://192.168.x.x:3000`)
+o un dominio público.
 
 ### Producción Docker
 ```bash
