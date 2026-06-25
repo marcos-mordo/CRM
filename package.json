@@ -39,6 +39,14 @@
       "electron/**/*",
       "package.json"
     ],
+    "extraResources": [
+      { "from": ".next/standalone", "to": "app/.next/standalone" },
+      { "from": ".next/static",     "to": "app/.next/standalone/.next/static" },
+      { "from": "public",           "to": "app/.next/standalone/public" },
+      { "from": "prisma/schema.prisma", "to": "app/prisma/schema.prisma" },
+      { "from": "node_modules/.prisma/client", "to": "app/node_modules/.prisma/client" },
+      { "from": "node_modules/@prisma/client", "to": "app/node_modules/@prisma/client" }
+    ],
     "extraMetadata": {
       "main": "electron/main.js"
     },

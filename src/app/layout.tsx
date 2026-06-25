@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getLocale } from 'next-intl/server';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { PwaRegister } from '@/components/pwa-register';
 import { Toaster } from 'sonner';
 import './globals.css';
 
@@ -37,6 +38,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
           <NextIntlClientProvider messages={messages}>
             {children}
+            <PwaRegister />
             <Toaster richColors position="top-right" />
           </NextIntlClientProvider>
         </ThemeProvider>

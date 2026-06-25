@@ -248,8 +248,18 @@ export async function getPublicShareUrl(id: string): Promise<string> {
   });
   const { generateShareToken } = await import('@/lib/public-share');
   const token = generateShareToken(sale.id);
-  const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
-  return `${baseUrl}/share/sale/${token}`;
+
+  // Si NEXTAUTH_URL no está configurada o sigue en localhost, avisamos al
+  // representante para que sepa que el link sólo funciona desde su misma red.
+  const rawUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000';
+  const baseUrl = rawUrl.replace(/\/$/, '');
+  const isLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(baseUrl);
+  const url = `${baseUrl}/share/sale/${token}`;
+
+  if (isLocal) {
+    return `${url}\n⚠️ NEXTAUTH_URL es local — el cliente sólo podrá abrir este link desde el mismo equipo. Configura NEXTAUTH_URL con tu dominio público para enviarlo por WhatsApp/email.`;
+  }
+  return url;
 }
 
 export async function deleteSale(id: string) {

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
 import { sendMail } from '@/lib/mailer';
+import { injectEmailTracking } from '@/lib/email-tracking';
 
 const campaignSchema = z.object({
   name: z.string().min(1).max(120),
@@ -73,13 +74,21 @@ export async function sendCampaign(id: string) {
   // Si A/B está activado y hay variante B, repartimos 50/50
   const useAB = campaign.abEnabled && campaign.abSubjectB && campaign.abHtmlB;
 
+  const baseUrl = (process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '');
+
   let idx = 0;
   for (const email of recipientEmails) {
     const variant: 'A' | 'B' | null = useAB ? (idx % 2 === 0 ? 'A' : 'B') : null;
     const subject = variant === 'B' ? campaign.abSubjectB! : campaign.subject;
-    const html = variant === 'B' ? campaign.abHtmlB! : campaign.htmlContent;
+    const baseHtml = variant === 'B' ? campaign.abHtmlB! : campaign.htmlContent;
 
     try {
+      // Crear tracking primero para tener el id que inyectamos en el HTML
+      const tracking = await prisma.emailTracking.create({
+        data: { campaignId: id, email, variant },
+      });
+      const html = injectEmailTracking(baseHtml, tracking.id, baseUrl);
+
       await sendMail({
         to: email,
         subject,
@@ -87,7 +96,6 @@ export async function sendCampaign(id: string) {
         from: campaign.fromEmail,
         fromName: campaign.fromName,
       });
-      await prisma.emailTracking.create({ data: { campaignId: id, email, variant } });
       sent++;
       if (variant === 'A') sentA++;
       if (variant === 'B') sentB++;
