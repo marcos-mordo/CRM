@@ -40,12 +40,33 @@
       "package.json"
     ],
     "extraResources": [
-      { "from": ".next/standalone", "to": "app/.next/standalone" },
-      { "from": ".next/static",     "to": "app/.next/standalone/.next/static" },
-      { "from": "public",           "to": "app/.next/standalone/public" },
-      { "from": "prisma/schema.prisma", "to": "app/prisma/schema.prisma" },
-      { "from": "node_modules/.prisma/client", "to": "app/node_modules/.prisma/client" },
-      { "from": "node_modules/@prisma/client", "to": "app/node_modules/@prisma/client" }
+      { "from": ".next/standalone",                 "to": "app/.next/standalone" },
+      { "from": ".next/standalone/node_modules",    "to": "app/.next/standalone/node_modules" },
+      { "from": ".next/static",                     "to": "app/.next/standalone/.next/static" },
+      { "from": "public",                           "to": "app/.next/standalone/public" },
+      { "from": "prisma/schema.prisma",             "to": "app/prisma/schema.prisma" },
+      { "from": "node_modules/.prisma/client",      "to": "app/node_modules/.prisma/client" },
+      { "from": "node_modules/@prisma/client",      "to": "app/node_modules/@prisma/client" },
+      { "from": "scripts/db-start.js",              "to": "app/scripts/db-start.js" },
+      { "from": "scripts/init-schema.sql",          "to": "app/scripts/init-schema.sql" },
+      { "from": "scripts/init-seed.sql",            "to": "app/scripts/init-seed.sql" },
+      { "from": "node_modules/embedded-postgres",   "to": "app/node_modules/embedded-postgres" },
+      { "from": "node_modules/async-exit-hook",     "to": "app/node_modules/async-exit-hook" },
+      { "from": "node_modules/pg",                  "to": "app/node_modules/pg" },
+      { "from": "node_modules/pg-types",            "to": "app/node_modules/pg-types" },
+      { "from": "node_modules/pg-connection-string","to": "app/node_modules/pg-connection-string" },
+      { "from": "node_modules/pg-pool",             "to": "app/node_modules/pg-pool" },
+      { "from": "node_modules/pg-protocol",         "to": "app/node_modules/pg-protocol" },
+      { "from": "node_modules/pg-int8",             "to": "app/node_modules/pg-int8" },
+      { "from": "node_modules/pg-cloudflare",       "to": "app/node_modules/pg-cloudflare" },
+      { "from": "node_modules/pgpass",              "to": "app/node_modules/pgpass" },
+      { "from": "node_modules/postgres-array",      "to": "app/node_modules/postgres-array" },
+      { "from": "node_modules/postgres-bytea",      "to": "app/node_modules/postgres-bytea" },
+      { "from": "node_modules/postgres-date",       "to": "app/node_modules/postgres-date" },
+      { "from": "node_modules/postgres-interval",   "to": "app/node_modules/postgres-interval" },
+      { "from": "node_modules/xtend",               "to": "app/node_modules/xtend" },
+      { "from": "node_modules/split2",              "to": "app/node_modules/split2" },
+      { "from": "node_modules/readable-stream",     "to": "app/node_modules/readable-stream" }
     ],
     "extraMetadata": {
       "main": "electron/main.js"
@@ -59,6 +80,7 @@
           ]
         }
       ],
+      "icon": "electron/icon.ico",
       "artifactName": "BrandHub-Setup-${version}.${ext}"
     },
     "mac": {
@@ -89,7 +111,10 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "BrandHub"
+      "shortcutName": "BrandHub",
+      "installerIcon": "electron/icon.ico",
+      "uninstallerIcon": "electron/icon.ico",
+      "installerHeaderIcon": "electron/icon.ico"
     },
     "publish": {
       "provider": "github",
@@ -128,6 +153,7 @@
     "cmdk": "^1.0.0",
     "date-fns": "^4.1.0",
     "electron-updater": "^6.8.9",
+    "embedded-postgres": "^18.4.0-beta.17",
     "lucide-react": "^0.456.0",
     "next": "15.0.3",
     "next-auth": "5.0.0-beta.25",
@@ -164,11 +190,12 @@
     "cross-env": "^10.1.0",
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
-    "embedded-postgres": "^18.4.0-beta.17",
     "eslint": "^9.14.0",
     "eslint-config-next": "15.0.3",
+    "png-to-ico": "^3.0.1",
     "postcss": "^8.4.49",
     "prisma": "^5.22.0",
+    "sharp": "^0.35.2",
     "tailwindcss": "^3.4.14",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",

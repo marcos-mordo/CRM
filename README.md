@@ -47,7 +47,10 @@ npm run setup          # prisma generate + db push + seed demo
 npm run dev            # http://localhost:3000
 ```
 
-**Credenciales demo:** `admin@brandhub.demo` / `Demo1234!`
+**Credenciales demo:**
+- Owner: `admin@acme.com` / `admin1234`
+- Manager: `maria@acme.com` / `admin1234`
+- Agente: `luis@acme.com` / `admin1234`
 
 ---
 
@@ -282,7 +285,7 @@ Requieren header `Authorization: Bearer brh_xxx` (genera tokens en `/settings`).
 
 | Caso | Cómo |
 |---|---|
-| Login | `admin@brandhub.demo` / `Demo1234!` |
+| Login | `admin@acme.com` / `admin1234` |
 | Crear venta | `/sales-orders/new`, firma con dedo o ratón |
 | Compartir venta | dropdown ⋯ → "Copiar enlace público" |
 | AI chat | bubble morado abajo derecha → "¿cuánto vendí?" |

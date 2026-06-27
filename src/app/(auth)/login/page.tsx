@@ -19,6 +19,18 @@ export default async function LoginPage() {
       <CardContent>
         <SsoButtons google={SSO_AVAILABLE.google} microsoft={SSO_AVAILABLE.microsoft} />
         <LoginForm />
+
+        {/* Hint de cuenta demo - solo visible si hay datos demo (no producción real) */}
+        <details className="mt-4 text-xs text-muted-foreground border border-dashed rounded-lg p-3">
+          <summary className="cursor-pointer font-medium">¿Es tu primera vez? Cuentas demo</summary>
+          <div className="mt-2 space-y-1 font-mono text-[11px]">
+            <p><strong>Owner:</strong> admin@acme.com / admin1234</p>
+            <p><strong>Manager:</strong> maria@acme.com / admin1234</p>
+            <p><strong>Agente:</strong> luis@acme.com / admin1234</p>
+            <p className="font-sans text-[10px] pt-1">O <code>admin@brandhub.local / admin1234</code> en app desktop recién instalada.</p>
+          </div>
+        </details>
+
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {t('noAccount')}{' '}
           <Link href="/register" className="text-primary font-medium hover:underline">
