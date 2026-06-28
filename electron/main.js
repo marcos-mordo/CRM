@@ -269,6 +269,20 @@ function createWindow() {
 
   mainWindow.loadURL(appUrl);
 
+  // Anti-minimize agresivo durante los primeros 15s: Windows tiende a
+  // minimizar BrowserWindow recién creadas en apps no-foreground (lanzadas
+  // desde script o helper). Cancelamos cualquier minimize automático.
+  let allowMinimize = false;
+  setTimeout(() => { allowMinimize = true; }, 15000);
+  mainWindow.on('minimize', (e) => {
+    if (!allowMinimize) {
+      log('[win] minimize bloqueado durante arranque');
+      e.preventDefault();
+      mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
   const focusWindow = (reason) => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
     log('[win] foco ventana, motivo:', reason);
@@ -346,6 +360,21 @@ function setupAutoUpdate() {
 // ============================================
 // Lifecycle
 // ============================================
+
+// Single instance: si ya hay una BrandHub abierta, foco esa en vez de
+// lanzar segunda (que reventaría con EADDRINUSE 3000 + postmaster.pid lock)
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+}
 
 app.whenReady().then(async () => {
   log('=== BrandHub iniciando, log file:', LOG_PATH);
