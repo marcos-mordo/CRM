@@ -53,6 +53,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       items: [
         { href: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
         { href: '/me', icon: Trophy, labelKey: 'myDashboard' },
+        { href: '/goals', icon: Trophy, labelKey: 'goals' },
         { href: '/contacts', icon: Users, labelKey: 'contacts' },
         { href: '/companies', icon: Building2, labelKey: 'companies' },
         { href: '/leads', icon: UserPlus, labelKey: 'leads' },

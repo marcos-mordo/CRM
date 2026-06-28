@@ -53,7 +53,7 @@ CREATE TYPE "CommissionStatus" AS ENUM ('PENDING', 'APPROVED', 'PAID', 'CANCELLE
 CREATE TYPE "AttachmentType" AS ENUM ('ID_DOCUMENT', 'PREVIOUS_BILL', 'CONTRACT', 'PHOTO', 'OTHER');
 
 -- CreateEnum
-CREATE TYPE "CustomFieldEntity" AS ENUM ('BRAND', 'PRODUCT', 'CUSTOMER', 'SALE');
+CREATE TYPE "CustomFieldEntity" AS ENUM ('BRAND', 'PRODUCT', 'CUSTOMER', 'SALE', 'CONTACT', 'COMPANY', 'DEAL', 'LEAD');
 
 -- CreateEnum
 CREATE TYPE "CustomFieldType" AS ENUM ('STRING', 'TEXT', 'NUMBER', 'DECIMAL', 'DATE', 'DATETIME', 'BOOLEAN', 'SELECT', 'MULTISELECT');
@@ -829,6 +829,54 @@ CREATE TABLE "CustomField" (
 );
 
 -- CreateTable
+CREATE TABLE "CustomFieldValue" (
+    "id" TEXT NOT NULL,
+    "entity" "CustomFieldEntity" NOT NULL,
+    "entityId" TEXT NOT NULL,
+    "fieldId" TEXT NOT NULL,
+    "value" TEXT,
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "CustomFieldValue_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Goal" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "period" TEXT NOT NULL,
+    "metric" TEXT NOT NULL,
+    "target" DECIMAL(14,2) NOT NULL,
+    "current" DECIMAL(14,2),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Goal_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TaskTemplate" (
+    "id" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "cadence" TEXT NOT NULL,
+    "weekday" INTEGER,
+    "monthDay" INTEGER,
+    "assignedToId" TEXT,
+    "priority" TEXT NOT NULL DEFAULT 'MEDIUM',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "lastGenerated" TIMESTAMP(3),
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TaskTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "ContractTemplate" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -1293,6 +1341,24 @@ CREATE INDEX "CustomField_organizationId_idx" ON "CustomField"("organizationId")
 CREATE UNIQUE INDEX "CustomField_organizationId_entity_key_key" ON "CustomField"("organizationId", "entity", "key");
 
 -- CreateIndex
+CREATE INDEX "CustomFieldValue_entityId_idx" ON "CustomFieldValue"("entityId");
+
+-- CreateIndex
+CREATE INDEX "CustomFieldValue_organizationId_idx" ON "CustomFieldValue"("organizationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CustomFieldValue_entity_entityId_fieldId_key" ON "CustomFieldValue"("entity", "entityId", "fieldId");
+
+-- CreateIndex
+CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "period");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
+
+-- CreateIndex
+CREATE INDEX "TaskTemplate_organizationId_active_idx" ON "TaskTemplate"("organizationId", "active");
+
+-- CreateIndex
 CREATE INDEX "ContractTemplate_organizationId_idx" ON "ContractTemplate"("organizationId");
 
 -- CreateIndex
@@ -1620,6 +1686,21 @@ ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_saleId_fkey" FOREIGN KEY ("s
 ALTER TABLE "CustomField" ADD CONSTRAINT "CustomField_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CustomFieldValue" ADD CONSTRAINT "CustomFieldValue_fieldId_fkey" FOREIGN KEY ("fieldId") REFERENCES "CustomField"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TaskTemplate" ADD CONSTRAINT "TaskTemplate_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TaskTemplate" ADD CONSTRAINT "TaskTemplate_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ContractTemplate" ADD CONSTRAINT "ContractTemplate_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1694,3 +1775,13 @@ ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_organizationId_fkey" F
 -- AddForeignKey
 ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_endCustomerId_fkey" FOREIGN KEY ("endCustomerId") REFERENCES "EndCustomer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+┌─────────────────────────────────────────────────────────┐
+│  Update available 5.22.0 -> 7.8.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘

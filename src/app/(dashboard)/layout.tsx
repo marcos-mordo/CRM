@@ -5,6 +5,8 @@ import { ViewerBanner } from '@/components/dashboard/viewer-banner';
 import { KeyboardShortcuts } from '@/components/dashboard/keyboard-shortcuts';
 import { AiChatBubble } from '@/components/ai/ai-chat-bubble';
 import { MobileBottomNav } from '@/components/dashboard/mobile-bottom-nav';
+import { QuickAdd } from '@/components/dashboard/quick-add';
+import { ShortcutsCheatsheet } from '@/components/dashboard/shortcuts-cheatsheet';
 import { SessionProvider } from 'next-auth/react';
 import { listMyOrganizations } from '@/lib/current-org';
 import { isAIConfigured } from '@/lib/ai';
@@ -38,6 +40,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
             {children}
           </main>
           <KeyboardShortcuts />
+          <QuickAdd />
+          <ShortcutsCheatsheet />
           <AiChatBubble enabled={isAIConfigured()} />
           <MobileBottomNav />
         </div>
