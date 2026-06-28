@@ -22,14 +22,45 @@ const contactSchema = z.object({
   ownerId: z.string().optional().nullable(),
 });
 
-export async function createContact(input: z.infer<typeof contactSchema>) {
+/**
+ * Detecta posibles duplicados por email exacto o teléfono normalizado.
+ * Útil llamarlo desde el cliente antes del submit para mostrar warning.
+ */
+export async function findContactDuplicates(input: { email?: string; phone?: string; mobile?: string }) {
+  const session = await requireAuth();
+  const orgId = session.user.organizationId;
+  const conditions: any[] = [];
+  if (input.email) conditions.push({ email: input.email.toLowerCase() });
+  const phones = [input.phone, input.mobile].filter(Boolean).map((p) => p!.replace(/\D/g, ''));
+  if (phones.length > 0) {
+    conditions.push({ OR: phones.flatMap((p) => [{ phone: { contains: p } }, { mobile: { contains: p } }]) });
+  }
+  if (conditions.length === 0) return [];
+
+  const dups = await prisma.contact.findMany({
+    where: { organizationId: orgId, OR: conditions },
+    select: { id: true, firstName: true, lastName: true, email: true, phone: true, mobile: true, company: { select: { name: true } } },
+    take: 5,
+  });
+  return dups;
+}
+
+export async function createContact(input: z.infer<typeof contactSchema> & { confirmDuplicate?: boolean }) {
   const session = await requireAuth();
   const parsed = contactSchema.parse(input);
+
+  // Comprueba duplicados a menos que el usuario lo haya confirmado
+  if (!input.confirmDuplicate) {
+    const dups = await findContactDuplicates({ email: parsed.email, phone: parsed.phone, mobile: parsed.mobile });
+    if (dups.length > 0) {
+      return { ok: false, duplicates: dups, error: 'duplicate_found' as const };
+    }
+  }
 
   const contact = await prisma.contact.create({
     data: {
       ...parsed,
-      email: parsed.email || null,
+      email: parsed.email ? parsed.email.toLowerCase() : null,
       companyId: parsed.companyId || null,
       ownerId: parsed.ownerId || session.user.id,
       organizationId: session.user.organizationId,

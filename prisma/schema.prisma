@@ -58,6 +58,8 @@ model Organization {
   contractTemplates  ContractTemplate[]
   repAssignments     RepBrandAssignment[]
   attachments        Attachment[]
+  goals              Goal[]
+  taskTemplates      TaskTemplate[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -130,6 +132,10 @@ model User {
   chatMessages       Message[]
   emailTemplates     EmailTemplate[]
   savedViews         SavedView[]
+
+  // Productividad
+  goals             Goal[]
+  taskTemplates     TaskTemplate[] @relation("TaskTemplateAssigned")
 
   @@index([organizationId])
   @@index([email])
@@ -949,6 +955,10 @@ enum CustomFieldEntity {
   PRODUCT
   CUSTOMER
   SALE
+  CONTACT
+  COMPANY
+  DEAL
+  LEAD
 }
 
 enum CustomFieldType {
@@ -1242,9 +1252,66 @@ model CustomField {
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  values         CustomFieldValue[]
 
   @@unique([organizationId, entity, key])
   @@index([organizationId])
+}
+
+model CustomFieldValue {
+  id            String            @id @default(cuid())
+  entity        CustomFieldEntity
+  entityId      String            // ID de Contact, Deal, etc.
+  fieldId       String
+  field         CustomField       @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  value         String?           @db.Text
+
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([entity, entityId, fieldId])
+  @@index([entityId])
+  @@index([organizationId])
+}
+
+// Metas/Quotas mensuales por representante
+model Goal {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  period        String   // "2026-06" formato YYYY-MM
+  metric        String   // "sales_count" | "sales_amount" | "commission" | "deals_won" | "calls_made"
+  target        Decimal  @db.Decimal(14, 2)
+  current       Decimal? @db.Decimal(14, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, period, metric])
+  @@index([organizationId, period])
+}
+
+// Tareas recurrentes: plantilla que genera tareas con cadencia
+model TaskTemplate {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?  @db.Text
+  cadence       String   // "daily" | "weekly" | "monthly"
+  weekday       Int?     // 0-6 para weekly
+  monthDay      Int?     // 1-31 para monthly
+  assignedToId  String?
+  assignedTo    User?    @relation("TaskTemplateAssigned", fields: [assignedToId], references: [id])
+  priority      String   @default("MEDIUM")
+  active        Boolean  @default(true)
+  lastGenerated DateTime?
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([organizationId, active])
 }
 
 model ContractTemplate {

@@ -1,0 +1,141 @@
+name: Release installers (Windows .exe + Android .apk)
+
+# Dispara cuando empujas un tag v1.x.x, o manual desde GitHub UI
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # =====================================
+  # Windows .exe (instalador NSIS 250 MB)
+  # =====================================
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install deps
+        run: npm install --legacy-peer-deps
+        env:
+          npm_config_legacy_peer_deps: true
+
+      - name: Prisma generate
+        run: npx prisma generate
+
+      - name: Build Next.js standalone
+        run: npm run build
+        env:
+          NEXTAUTH_SECRET: ci-build-only
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://x:x@localhost:5433/x
+
+      - name: Build .exe
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload .exe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrandHub-Windows
+          path: dist-electron/BrandHub-Setup-*.exe
+
+  # =====================================
+  # Android .apk (Capacitor + Gradle)
+  # =====================================
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install deps
+        run: npm install --legacy-peer-deps
+
+      - name: Add Android platform
+        run: npx cap add android || echo "android already added"
+
+      - name: Configure Capacitor server URL
+        # Permite override en GitHub UI (workflow_dispatch input no aún;
+        # de momento usa secret/env)
+        run: |
+          echo "BRANDHUB_SERVER_URL=${BRANDHUB_SERVER_URL:-https://brandhub-demo.vercel.app}" >> $GITHUB_ENV
+
+      - name: Capacitor sync
+        run: npx cap sync android
+        env:
+          BRANDHUB_SERVER_URL: ${{ env.BRANDHUB_SERVER_URL }}
+
+      - name: Build APK
+        run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
+
+      - name: Rename APK
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk BrandHub-Android.apk
+
+      - name: Upload .apk artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrandHub-Android
+          path: BrandHub-Android.apk
+
+  # =====================================
+  # Crear release con ambos instaladores
+  # =====================================
+  release:
+    needs: [build-windows, build-android]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: BrandHub-Windows
+          path: ./
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: BrandHub-Android
+          path: ./
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: BrandHub ${{ github.ref_name }}
+          body: |
+            ## BrandHub ${{ github.ref_name }}
+
+            Descarga el instalador para tu sistema:
+
+            - **Windows PC** → `BrandHub-Setup-*.exe` (doble clic, ~250 MB)
+            - **Android** → `BrandHub-Android.apk` (descarga + abrir, ~15 MB)
+
+            ### Credenciales primera vez
+            - Email: `admin@brandhub.local`
+            - Password: `admin1234`
+
+            ### Notas
+            - Windows: Si aparece "SmartScreen", click "Más información" → "Ejecutar de todos modos"
+            - Android: Activa "Instalar apps de fuentes desconocidas" la primera vez
+          files: |
+            BrandHub-Setup-*.exe
+            BrandHub-Android.apk
+          draft: false
+          prerelease: false
