@@ -74,16 +74,10 @@ jobs:
       - name: Add Android platform
         run: npx cap add android || echo "android already added"
 
-      - name: Configure Capacitor server URL
-        # Permite override en GitHub UI (workflow_dispatch input no aún;
-        # de momento usa secret/env)
-        run: |
-          echo "BRANDHUB_SERVER_URL=${BRANDHUB_SERVER_URL:-https://brandhub-demo.vercel.app}" >> $GITHUB_ENV
-
       - name: Capacitor sync
+        # APK arranca con bootstrap local que pide URL del servidor.
+        # No necesitamos build-time URL.
         run: npx cap sync android
-        env:
-          BRANDHUB_SERVER_URL: ${{ env.BRANDHUB_SERVER_URL }}
 
       - name: Build APK
         run: cd android && chmod +x ./gradlew && ./gradlew assembleDebug
