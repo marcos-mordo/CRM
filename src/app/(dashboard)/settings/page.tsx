@@ -9,6 +9,7 @@ import { RepAssignmentsManager } from '@/components/settings/rep-assignments-man
 import { WebhooksManager } from '@/components/settings/webhooks-manager';
 import { ApiTokensManager } from '@/components/settings/api-tokens-manager';
 import { TagsManager } from '@/components/settings/tags-manager';
+import { ServerUrlCard } from '@/components/settings/server-url-card';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
@@ -55,6 +56,7 @@ export default async function SettingsPage() {
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
           <TabsTrigger value="api-tokens">API tokens</TabsTrigger>
           <TabsTrigger value="tags">Etiquetas</TabsTrigger>
+          <TabsTrigger value="device">Dispositivo</TabsTrigger>
           <TabsTrigger value="billing" asChild>
             <Link href="/settings/billing">Billing</Link>
           </TabsTrigger>
@@ -100,6 +102,10 @@ export default async function SettingsPage() {
 
         <TabsContent value="tags" className="space-y-4">
           <TagsManager tags={tags} />
+        </TabsContent>
+
+        <TabsContent value="device" className="space-y-4">
+          <ServerUrlCard />
         </TabsContent>
       </Tabs>
     </div>
