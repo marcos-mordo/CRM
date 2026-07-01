@@ -858,6 +858,21 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
+CREATE TABLE "PushSubscription" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "endpoint" TEXT NOT NULL,
+    "keyP256dh" TEXT NOT NULL,
+    "keyAuth" TEXT NOT NULL,
+    "userAgent" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "lastUsedAt" TIMESTAMP(3),
+    "organizationId" TEXT NOT NULL,
+
+    CONSTRAINT "PushSubscription_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "TaskTemplate" (
     "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -1356,6 +1371,15 @@ CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "perio
 CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint");
+
+-- CreateIndex
+CREATE INDEX "PushSubscription_userId_idx" ON "PushSubscription"("userId");
+
+-- CreateIndex
+CREATE INDEX "PushSubscription_organizationId_idx" ON "PushSubscription"("organizationId");
+
+-- CreateIndex
 CREATE INDEX "TaskTemplate_organizationId_active_idx" ON "TaskTemplate"("organizationId", "active");
 
 -- CreateIndex
@@ -1693,6 +1717,12 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PushSubscription" ADD CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PushSubscription" ADD CONSTRAINT "PushSubscription_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "TaskTemplate" ADD CONSTRAINT "TaskTemplate_assignedToId_fkey" FOREIGN KEY ("assignedToId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

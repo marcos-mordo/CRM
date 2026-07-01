@@ -60,6 +60,7 @@ model Organization {
   attachments        Attachment[]
   goals              Goal[]
   taskTemplates      TaskTemplate[]
+  pushSubscriptions  PushSubscription[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -136,6 +137,7 @@ model User {
   // Productividad
   goals             Goal[]
   taskTemplates     TaskTemplate[] @relation("TaskTemplateAssigned")
+  pushSubscriptions PushSubscription[]
 
   @@index([organizationId])
   @@index([email])
@@ -1291,6 +1293,25 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// Suscripciones a push notifications (Web Push API)
+model PushSubscription {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint      String   @unique @db.Text
+  keyP256dh     String   @db.Text
+  keyAuth       String
+  userAgent     String?
+  createdAt     DateTime @default(now())
+  lastUsedAt    DateTime?
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([organizationId])
 }
 
 // Tareas recurrentes: plantilla que genera tareas con cadencia
