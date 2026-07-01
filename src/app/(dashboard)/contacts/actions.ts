@@ -90,6 +90,37 @@ export async function updateContact(id: string, input: z.infer<typeof contactSch
   return { ok: true };
 }
 
+const INLINE_EDITABLE_FIELDS = [
+  'firstName', 'lastName', 'email', 'phone', 'mobile',
+  'jobTitle', 'department', 'city', 'country', 'notes',
+] as const;
+
+export async function patchContactField(
+  id: string,
+  field: (typeof INLINE_EDITABLE_FIELDS)[number],
+  value: string | null
+) {
+  const session = await requireAuth();
+  if (session.user.role === 'VIEWER') throw new Error('Tu rol no puede editar');
+  if (!INLINE_EDITABLE_FIELDS.includes(field)) throw new Error('Campo no editable');
+
+  const clean = value?.trim() || null;
+  // Validaciones mínimas
+  if (field === 'email' && clean && !/^\S+@\S+\.\S+$/.test(clean)) {
+    throw new Error('Email inválido');
+  }
+  if ((field === 'firstName' || field === 'lastName') && !clean) {
+    throw new Error('Este campo no puede quedar vacío');
+  }
+
+  await prisma.contact.update({
+    where: { id, organizationId: session.user.organizationId },
+    data: { [field]: clean },
+  });
+  revalidatePath('/contacts');
+  return { ok: true };
+}
+
 export async function deleteContact(id: string) {
   const session = await requireAuth();
   await prisma.contact.delete({ where: { id, organizationId: session.user.organizationId } });

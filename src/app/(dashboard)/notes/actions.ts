@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-helpers';
+import { processMentions } from '@/lib/mentions';
 
 const createSchema = z.object({
   content: z.string().min(1).max(5000),
@@ -14,7 +15,7 @@ export async function createNote(input: z.infer<typeof createSchema>) {
   const session = await requireAuth();
   const parsed = createSchema.parse(input);
 
-  await prisma.note.create({
+  const note = await prisma.note.create({
     data: {
       content: parsed.content,
       organizationId: session.user.organizationId,
@@ -24,6 +25,15 @@ export async function createNote(input: z.infer<typeof createSchema>) {
         : {}),
     },
   });
+
+  // Notificar @mentions
+  await processMentions(
+    note.id,
+    parsed.content,
+    session.user.organizationId,
+    session.user.id,
+    session.user.name || session.user.email || 'Alguien',
+  ).catch(() => null);
 
   for (const cid of parsed.contactIds) revalidatePath(`/contacts/${cid}`);
   revalidatePath('/contacts');

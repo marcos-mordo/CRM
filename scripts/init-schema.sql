@@ -602,6 +602,17 @@ CREATE TABLE "Note" (
 );
 
 -- CreateTable
+CREATE TABLE "NoteMention" (
+    "id" TEXT NOT NULL,
+    "noteId" TEXT NOT NULL,
+    "mentionedUserId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "seenAt" TIMESTAMP(3),
+
+    CONSTRAINT "NoteMention_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "NoteList" (
     "noteId" TEXT NOT NULL,
     "contactId" TEXT NOT NULL,
@@ -804,8 +815,11 @@ CREATE TABLE "Attachment" (
     "localPath" TEXT,
     "uploaded" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "uploaderId" TEXT,
     "organizationId" TEXT NOT NULL,
     "saleId" TEXT,
+    "contactId" TEXT,
+    "dealId" TEXT,
 
     CONSTRAINT "Attachment_pkey" PRIMARY KEY ("id")
 );
@@ -1372,6 +1386,12 @@ CREATE UNIQUE INDEX "Tag_organizationId_name_key" ON "Tag"("organizationId", "na
 CREATE INDEX "Note_organizationId_idx" ON "Note"("organizationId");
 
 -- CreateIndex
+CREATE INDEX "NoteMention_mentionedUserId_seenAt_idx" ON "NoteMention"("mentionedUserId", "seenAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NoteMention_noteId_mentionedUserId_key" ON "NoteMention"("noteId", "mentionedUserId");
+
+-- CreateIndex
 CREATE INDEX "Brand_organizationId_idx" ON "Brand"("organizationId");
 
 -- CreateIndex
@@ -1442,6 +1462,12 @@ CREATE INDEX "Attachment_organizationId_idx" ON "Attachment"("organizationId");
 
 -- CreateIndex
 CREATE INDEX "Attachment_saleId_idx" ON "Attachment"("saleId");
+
+-- CreateIndex
+CREATE INDEX "Attachment_contactId_idx" ON "Attachment"("contactId");
+
+-- CreateIndex
+CREATE INDEX "Attachment_dealId_idx" ON "Attachment"("dealId");
 
 -- CreateIndex
 CREATE INDEX "CustomField_organizationId_idx" ON "CustomField"("organizationId");
@@ -1771,6 +1797,9 @@ ALTER TABLE "Note" ADD CONSTRAINT "Note_organizationId_fkey" FOREIGN KEY ("organ
 ALTER TABLE "Note" ADD CONSTRAINT "Note_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "NoteMention" ADD CONSTRAINT "NoteMention_noteId_fkey" FOREIGN KEY ("noteId") REFERENCES "Note"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "NoteList" ADD CONSTRAINT "NoteList_noteId_fkey" FOREIGN KEY ("noteId") REFERENCES "Note"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1832,6 +1861,12 @@ ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_organizationId_fkey" FOREIGN
 
 -- AddForeignKey
 ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_saleId_fkey" FOREIGN KEY ("saleId") REFERENCES "Sale"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "Contact"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Attachment" ADD CONSTRAINT "Attachment_dealId_fkey" FOREIGN KEY ("dealId") REFERENCES "Deal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "CustomField" ADD CONSTRAINT "CustomField_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
