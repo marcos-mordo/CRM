@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/dashboard/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ContactTimeline } from '@/components/contacts/contact-timeline';
+import { AttachmentsPanel } from '@/components/attachments/attachments-panel';
 import { Mail, Phone, Building2, Briefcase, Edit, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -23,7 +24,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   if (!contact) return notFound();
 
   // Cargar todas las interacciones en paralelo
-  const [tasks, notes, deals, activities] = await Promise.all([
+  const [tasks, notes, deals, activities, attachments] = await Promise.all([
     prisma.task.findMany({
       where: { organizationId: session.user.organizationId, contactId: id },
       orderBy: { createdAt: 'desc' },
@@ -47,6 +48,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       orderBy: { createdAt: 'desc' },
       take: 100,
       include: { user: { select: { name: true } } },
+    }),
+    prisma.attachment.findMany({
+      where: { organizationId: session.user.organizationId, contactId: id },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, filename: true, size: true, mimeType: true, type: true, createdAt: true, url: true },
     }),
   ]);
 
@@ -120,6 +126,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               {contact.owner?.name ?? '—'}
             </CardContent>
           </Card>
+
+          <AttachmentsPanel entity="contact" entityId={id} initial={attachments} />
 
           {deals.length > 0 && (
             <Card>

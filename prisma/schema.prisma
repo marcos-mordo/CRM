@@ -248,6 +248,7 @@ model Contact {
   tickets     Ticket[]
   noteLinks   NoteList[]
   tags        ContactTag[]
+  attachments Attachment[]
 
   @@index([organizationId])
   @@index([email])
@@ -389,6 +390,7 @@ model Deal {
   activities Activity[]
   tasks      Task[]
   quotes     Quote[]
+  attachments Attachment[]
 
   @@index([organizationId])
   @@index([pipelineId])
@@ -879,8 +881,21 @@ model Note {
   author   User   @relation(fields: [authorId], references: [id])
 
   contacts NoteList[]
+  mentions NoteMention[]
 
   @@index([organizationId])
+}
+
+model NoteMention {
+  id            String   @id @default(cuid())
+  noteId        String
+  note          Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  mentionedUserId String
+  createdAt     DateTime @default(now())
+  seenAt        DateTime?
+
+  @@unique([noteId, mentionedUserId])
+  @@index([mentionedUserId, seenAt])
 }
 
 model NoteList {
@@ -1227,11 +1242,12 @@ model Attachment {
   filename  String
   mimeType  String
   size      Int
-  url       String
+  url       String         @db.Text
   type      AttachmentType @default(OTHER)
   localPath String?
   uploaded  Boolean        @default(true)
   createdAt DateTime       @default(now())
+  uploaderId String?
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -1239,8 +1255,16 @@ model Attachment {
   saleId String?
   sale   Sale?   @relation(fields: [saleId], references: [id], onDelete: Cascade)
 
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  dealId String?
+  deal   Deal?   @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
   @@index([organizationId])
   @@index([saleId])
+  @@index([contactId])
+  @@index([dealId])
 }
 
 model CustomField {
