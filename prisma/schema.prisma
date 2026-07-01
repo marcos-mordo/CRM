@@ -61,6 +61,8 @@ model Organization {
   goals              Goal[]
   taskTemplates      TaskTemplate[]
   pushSubscriptions  PushSubscription[]
+  webForms           WebForm[]
+  emailSequences     EmailSequence[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -138,6 +140,8 @@ model User {
   goals             Goal[]
   taskTemplates     TaskTemplate[] @relation("TaskTemplateAssigned")
   pushSubscriptions PushSubscription[]
+  webForms          WebForm[]      @relation("WebFormOwner")
+  emailSequences    EmailSequence[]
 
   @@index([organizationId])
   @@index([email])
@@ -1293,6 +1297,111 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// Web forms públicos embebibles (captura de leads desde tu web)
+model WebForm {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  title         String
+  description   String?  @db.Text
+  fields        Json     // [{key,label,type:'text|email|tel|select|textarea',required,options?}]
+  successMessage String? @default("Gracias, hemos recibido tu solicitud.")
+  redirectUrl   String?
+  notifyEmails  String?  // csv "a@x.com,b@x.com"
+  ownerId       String?
+  owner         User?    @relation("WebFormOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  active        Boolean  @default(true)
+  submissions   Int      @default(0)
+  organizationId String
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([organizationId, active])
+}
+
+// Secuencias de email (drip campaigns)
+model EmailSequence {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?  @db.Text
+  active         Boolean  @default(true)
+  steps          EmailSequenceStep[]
+  enrollments    EmailSequenceEnrollment[]
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User @relation(fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, active])
+}
+
+model EmailSequenceStep {
+  id          String        @id @default(cuid())
+  sequenceId  String
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  order       Int           @default(0)
+  delayDays   Int           @default(0) // días desde el paso anterior
+  subject     String
+  bodyHtml    String        @db.Text
+
+  @@index([sequenceId, order])
+}
+
+model EmailSequenceEnrollment {
+  id          String        @id @default(cuid())
+  sequenceId  String
+  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  contactId   String
+  currentStep Int           @default(0)
+  status      String        @default("ACTIVE") // ACTIVE | PAUSED | COMPLETED | UNSUBSCRIBED
+  startedAt   DateTime      @default(now())
+  nextRunAt   DateTime
+  completedAt DateTime?
+
+  organizationId String
+
+  @@index([status, nextRunAt])
+  @@index([contactId])
+  @@unique([sequenceId, contactId])
+}
+
+// Time tracking en tareas
+model TimeEntry {
+  id          String   @id @default(cuid())
+  taskId      String?
+  contactId   String?
+  dealId      String?
+  description String?  @db.Text
+  startedAt   DateTime
+  endedAt     DateTime?
+  seconds     Int?
+  billable    Boolean  @default(false)
+
+  userId         String
+  organizationId String
+  createdAt      DateTime @default(now())
+
+  @@index([userId, startedAt])
+  @@index([taskId])
+  @@index([organizationId])
+}
+
+// Preferencias de notificación por usuario
+model NotificationPreference {
+  id            String  @id @default(cuid())
+  userId        String  @unique
+  emailDigest   Boolean @default(true)
+  emailInstant  Boolean @default(false)
+  pushEnabled   Boolean @default(true)
+  telegramEnabled Boolean @default(false)
+  events        Json    @default("{}")  // {SALE_SIGNED:true, LEAD_ASSIGNED:true, ...}
+  updatedAt     DateTime @updatedAt
 }
 
 // Suscripciones a push notifications (Web Push API)

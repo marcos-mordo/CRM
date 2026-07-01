@@ -7,6 +7,7 @@ import { AiChatBubble } from '@/components/ai/ai-chat-bubble';
 import { MobileBottomNav } from '@/components/dashboard/mobile-bottom-nav';
 import { QuickAdd } from '@/components/dashboard/quick-add';
 import { ShortcutsCheatsheet } from '@/components/dashboard/shortcuts-cheatsheet';
+import { TimeTrackerWidget } from '@/components/dashboard/time-tracker';
 import { SessionProvider } from 'next-auth/react';
 import { listMyOrganizations } from '@/lib/current-org';
 import { isAIConfigured } from '@/lib/ai';
@@ -42,6 +43,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <KeyboardShortcuts />
           <QuickAdd />
           <ShortcutsCheatsheet />
+          <TimeTrackerWidget />
           <AiChatBubble enabled={isAIConfigured()} />
           <MobileBottomNav />
         </div>

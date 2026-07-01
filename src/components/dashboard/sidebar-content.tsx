@@ -61,6 +61,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/tasks', icon: CheckSquare, labelKey: 'tasks' },
         { href: '/calendar', icon: CalendarDays, labelKey: 'calendar' },
         { href: '/chat', icon: MessageCircle, labelKey: 'chat' },
+        { href: '/web-forms', icon: FileText, labelKey: 'webForms' },
       ],
     },
     {
