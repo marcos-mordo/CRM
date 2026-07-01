@@ -8,6 +8,7 @@ import { formatCurrency, formatDate, initials } from '@/lib/utils';
 import { getTranslations } from 'next-intl/server';
 import { SalesChart } from '@/components/dashboard/sales-chart';
 import { PipelineChart } from '@/components/dashboard/pipeline-chart';
+import { DealForecast } from '@/components/dashboard/deal-forecast';
 import { OnboardingCard } from '@/components/dashboard/onboarding-card';
 import { AiInsightsWidget } from '@/components/dashboard/ai-insights-widget';
 import { YoyComparison } from '@/components/dashboard/yoy-comparison';
@@ -258,6 +259,8 @@ export default async function DashboardPage() {
             <SalesChart data={salesByMonth} />
           </CardContent>
         </Card>
+
+        <DealForecast organizationId={session.user.organizationId} />
 
         <Card>
           <CardHeader>

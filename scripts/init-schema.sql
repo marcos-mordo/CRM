@@ -858,6 +858,100 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
+CREATE TABLE "WebForm" (
+    "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "fields" JSONB NOT NULL,
+    "successMessage" TEXT DEFAULT 'Gracias, hemos recibido tu solicitud.',
+    "redirectUrl" TEXT,
+    "notifyEmails" TEXT,
+    "ownerId" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "submissions" INTEGER NOT NULL DEFAULT 0,
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "WebForm_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailSequence" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "organizationId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "EmailSequence_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailSequenceStep" (
+    "id" TEXT NOT NULL,
+    "sequenceId" TEXT NOT NULL,
+    "order" INTEGER NOT NULL DEFAULT 0,
+    "delayDays" INTEGER NOT NULL DEFAULT 0,
+    "subject" TEXT NOT NULL,
+    "bodyHtml" TEXT NOT NULL,
+
+    CONSTRAINT "EmailSequenceStep_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailSequenceEnrollment" (
+    "id" TEXT NOT NULL,
+    "sequenceId" TEXT NOT NULL,
+    "contactId" TEXT NOT NULL,
+    "currentStep" INTEGER NOT NULL DEFAULT 0,
+    "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+    "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "nextRunAt" TIMESTAMP(3) NOT NULL,
+    "completedAt" TIMESTAMP(3),
+    "organizationId" TEXT NOT NULL,
+
+    CONSTRAINT "EmailSequenceEnrollment_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TimeEntry" (
+    "id" TEXT NOT NULL,
+    "taskId" TEXT,
+    "contactId" TEXT,
+    "dealId" TEXT,
+    "description" TEXT,
+    "startedAt" TIMESTAMP(3) NOT NULL,
+    "endedAt" TIMESTAMP(3),
+    "seconds" INTEGER,
+    "billable" BOOLEAN NOT NULL DEFAULT false,
+    "userId" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "TimeEntry_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "NotificationPreference" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "emailDigest" BOOLEAN NOT NULL DEFAULT true,
+    "emailInstant" BOOLEAN NOT NULL DEFAULT false,
+    "pushEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "telegramEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "events" JSONB NOT NULL DEFAULT '{}',
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "NotificationPreference_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "PushSubscription" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
@@ -1371,6 +1465,39 @@ CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "perio
 CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "WebForm_slug_key" ON "WebForm"("slug");
+
+-- CreateIndex
+CREATE INDEX "WebForm_organizationId_active_idx" ON "WebForm"("organizationId", "active");
+
+-- CreateIndex
+CREATE INDEX "EmailSequence_organizationId_active_idx" ON "EmailSequence"("organizationId", "active");
+
+-- CreateIndex
+CREATE INDEX "EmailSequenceStep_sequenceId_order_idx" ON "EmailSequenceStep"("sequenceId", "order");
+
+-- CreateIndex
+CREATE INDEX "EmailSequenceEnrollment_status_nextRunAt_idx" ON "EmailSequenceEnrollment"("status", "nextRunAt");
+
+-- CreateIndex
+CREATE INDEX "EmailSequenceEnrollment_contactId_idx" ON "EmailSequenceEnrollment"("contactId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmailSequenceEnrollment_sequenceId_contactId_key" ON "EmailSequenceEnrollment"("sequenceId", "contactId");
+
+-- CreateIndex
+CREATE INDEX "TimeEntry_userId_startedAt_idx" ON "TimeEntry"("userId", "startedAt");
+
+-- CreateIndex
+CREATE INDEX "TimeEntry_taskId_idx" ON "TimeEntry"("taskId");
+
+-- CreateIndex
+CREATE INDEX "TimeEntry_organizationId_idx" ON "TimeEntry"("organizationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NotificationPreference_userId_key" ON "NotificationPreference"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PushSubscription_endpoint_key" ON "PushSubscription"("endpoint");
 
 -- CreateIndex
@@ -1719,6 +1846,24 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "WebForm" ADD CONSTRAINT "WebForm_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WebForm" ADD CONSTRAINT "WebForm_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailSequence" ADD CONSTRAINT "EmailSequence_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailSequence" ADD CONSTRAINT "EmailSequence_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailSequenceStep" ADD CONSTRAINT "EmailSequenceStep_sequenceId_fkey" FOREIGN KEY ("sequenceId") REFERENCES "EmailSequence"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailSequenceEnrollment" ADD CONSTRAINT "EmailSequenceEnrollment_sequenceId_fkey" FOREIGN KEY ("sequenceId") REFERENCES "EmailSequence"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PushSubscription" ADD CONSTRAINT "PushSubscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -1805,13 +1950,3 @@ ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_organizationId_fkey" F
 -- AddForeignKey
 ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_endCustomerId_fkey" FOREIGN KEY ("endCustomerId") REFERENCES "EndCustomer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-┌─────────────────────────────────────────────────────────┐
-│  Update available 5.22.0 -> 7.8.0                       │
-│                                                         │
-│  This is a major update - please follow the guide at    │
-│  https://pris.ly/d/major-version-upgrade                │
-│                                                         │
-│  Run the following to update                            │
-│    npm i --save-dev prisma@latest                       │
-│    npm i @prisma/client@latest                          │
-└─────────────────────────────────────────────────────────┘
