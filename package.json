@@ -40,33 +40,114 @@
       "package.json"
     ],
     "extraResources": [
-      { "from": ".next/standalone",                 "to": "app/.next/standalone" },
-      { "from": ".next/standalone/node_modules",    "to": "app/.next/standalone/node_modules" },
-      { "from": ".next/static",                     "to": "app/.next/standalone/.next/static" },
-      { "from": "public",                           "to": "app/.next/standalone/public" },
-      { "from": "prisma/schema.prisma",             "to": "app/prisma/schema.prisma" },
-      { "from": "node_modules/.prisma/client",      "to": "app/node_modules/.prisma/client" },
-      { "from": "node_modules/@prisma/client",      "to": "app/node_modules/@prisma/client" },
-      { "from": "scripts/db-start.js",              "to": "app/scripts/db-start.js" },
-      { "from": "scripts/init-schema.sql",          "to": "app/scripts/init-schema.sql" },
-      { "from": "scripts/init-seed.sql",            "to": "app/scripts/init-seed.sql" },
-      { "from": "node_modules/embedded-postgres",   "to": "app/node_modules/embedded-postgres" },
-      { "from": "node_modules/async-exit-hook",     "to": "app/node_modules/async-exit-hook" },
-      { "from": "node_modules/pg",                  "to": "app/node_modules/pg" },
-      { "from": "node_modules/pg-types",            "to": "app/node_modules/pg-types" },
-      { "from": "node_modules/pg-connection-string","to": "app/node_modules/pg-connection-string" },
-      { "from": "node_modules/pg-pool",             "to": "app/node_modules/pg-pool" },
-      { "from": "node_modules/pg-protocol",         "to": "app/node_modules/pg-protocol" },
-      { "from": "node_modules/pg-int8",             "to": "app/node_modules/pg-int8" },
-      { "from": "node_modules/pg-cloudflare",       "to": "app/node_modules/pg-cloudflare" },
-      { "from": "node_modules/pgpass",              "to": "app/node_modules/pgpass" },
-      { "from": "node_modules/postgres-array",      "to": "app/node_modules/postgres-array" },
-      { "from": "node_modules/postgres-bytea",      "to": "app/node_modules/postgres-bytea" },
-      { "from": "node_modules/postgres-date",       "to": "app/node_modules/postgres-date" },
-      { "from": "node_modules/postgres-interval",   "to": "app/node_modules/postgres-interval" },
-      { "from": "node_modules/xtend",               "to": "app/node_modules/xtend" },
-      { "from": "node_modules/split2",              "to": "app/node_modules/split2" },
-      { "from": "node_modules/readable-stream",     "to": "app/node_modules/readable-stream" }
+      {
+        "from": ".next/standalone",
+        "to": "app/.next/standalone"
+      },
+      {
+        "from": ".next/standalone/node_modules",
+        "to": "app/.next/standalone/node_modules"
+      },
+      {
+        "from": ".next/static",
+        "to": "app/.next/standalone/.next/static"
+      },
+      {
+        "from": "public",
+        "to": "app/.next/standalone/public"
+      },
+      {
+        "from": "prisma/schema.prisma",
+        "to": "app/prisma/schema.prisma"
+      },
+      {
+        "from": "node_modules/.prisma/client",
+        "to": "app/node_modules/.prisma/client"
+      },
+      {
+        "from": "node_modules/@prisma/client",
+        "to": "app/node_modules/@prisma/client"
+      },
+      {
+        "from": "scripts/db-start.js",
+        "to": "app/scripts/db-start.js"
+      },
+      {
+        "from": "scripts/init-schema.sql",
+        "to": "app/scripts/init-schema.sql"
+      },
+      {
+        "from": "scripts/init-seed.sql",
+        "to": "app/scripts/init-seed.sql"
+      },
+      {
+        "from": "node_modules/embedded-postgres",
+        "to": "app/node_modules/embedded-postgres"
+      },
+      {
+        "from": "node_modules/async-exit-hook",
+        "to": "app/node_modules/async-exit-hook"
+      },
+      {
+        "from": "node_modules/pg",
+        "to": "app/node_modules/pg"
+      },
+      {
+        "from": "node_modules/pg-types",
+        "to": "app/node_modules/pg-types"
+      },
+      {
+        "from": "node_modules/pg-connection-string",
+        "to": "app/node_modules/pg-connection-string"
+      },
+      {
+        "from": "node_modules/pg-pool",
+        "to": "app/node_modules/pg-pool"
+      },
+      {
+        "from": "node_modules/pg-protocol",
+        "to": "app/node_modules/pg-protocol"
+      },
+      {
+        "from": "node_modules/pg-int8",
+        "to": "app/node_modules/pg-int8"
+      },
+      {
+        "from": "node_modules/pg-cloudflare",
+        "to": "app/node_modules/pg-cloudflare"
+      },
+      {
+        "from": "node_modules/pgpass",
+        "to": "app/node_modules/pgpass"
+      },
+      {
+        "from": "node_modules/postgres-array",
+        "to": "app/node_modules/postgres-array"
+      },
+      {
+        "from": "node_modules/postgres-bytea",
+        "to": "app/node_modules/postgres-bytea"
+      },
+      {
+        "from": "node_modules/postgres-date",
+        "to": "app/node_modules/postgres-date"
+      },
+      {
+        "from": "node_modules/postgres-interval",
+        "to": "app/node_modules/postgres-interval"
+      },
+      {
+        "from": "node_modules/xtend",
+        "to": "app/node_modules/xtend"
+      },
+      {
+        "from": "node_modules/split2",
+        "to": "app/node_modules/split2"
+      },
+      {
+        "from": "node_modules/readable-stream",
+        "to": "app/node_modules/readable-stream"
+      }
     ],
     "extraMetadata": {
       "main": "electron/main.js"
@@ -171,6 +252,7 @@
     "stripe": "^22.2.3",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "web-push": "^3.6.7",
     "zod": "^3.23.8",
     "zustand": "^5.0.1"
   },
@@ -185,6 +267,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
+    "@types/web-push": "^3.6.4",
     "autoprefixer": "^10.4.20",
     "concurrently": "^10.0.3",
     "cross-env": "^10.1.0",
