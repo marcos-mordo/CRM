@@ -131,57 +131,72 @@ async function startEmbeddedPostgres() {
 // Next.js standalone
 // ============================================
 
+/**
+ * Auto-reparable: en cada arranque comprueba el ESTADO REAL de la DB
+ * (no un marker file que puede quedar desincronizado):
+ * - Si falta la tabla "User" → aplica init-schema.sql
+ * - Si no hay ningún usuario → aplica init-seed.sql (crea admin@brandhub.local)
+ * Así una instalación cuyo primer arranque falló a medias se cura sola
+ * en el siguiente arranque.
+ */
 async function applyDbSchema(databaseUrl) {
-  const marker = path.join(app.getPath('userData'), '.schema-applied');
-  if (fs.existsSync(marker)) {
-    log('[schema] ya aplicado anteriormente, saltando');
+  const pgPath = path.join(getResourcesPath(), 'node_modules', 'pg');
+  let Client;
+  try {
+    Client = require(pgPath).Client;
+  } catch (err) {
+    log('[schema] no se pudo cargar pg:', err.message);
     return;
   }
-  updateSplash('Creando esquema de base de datos…');
 
-  const sqlPath = getResourcesPath('scripts', 'init-schema.sql');
-  if (!fs.existsSync(sqlPath)) {
-    log('[schema] init-schema.sql no encontrado en', sqlPath);
+  const c = new Client({ connectionString: databaseUrl });
+  try {
+    await c.connect();
+  } catch (err) {
+    log('[schema] DB inaccesible:', err.message);
     return;
   }
-  const sql = fs.readFileSync(sqlPath, 'utf-8');
 
   try {
-    const pgPath = path.join(getResourcesPath(), 'node_modules', 'pg');
-    const { Client } = require(pgPath);
-    const c = new Client({ connectionString: databaseUrl });
-    await c.connect();
-    log('[schema] ejecutando init-schema.sql (', sql.length, 'bytes)');
-    await c.query(sql);
-    await c.end();
-    log('[schema] schema aplicado OK');
-    fs.writeFileSync(marker, new Date().toISOString());
+    // ¿Existe la tabla User?
+    const t = await c.query(`SELECT to_regclass('public."User"') AS reg`);
+    const hasSchema = !!t.rows[0]?.reg;
 
-    // Seed automático opcional
-    await trySeed(databaseUrl);
-  } catch (err) {
-    log('[schema] error aplicando schema:', err.message);
-  }
-}
+    if (!hasSchema) {
+      updateSplash('Creando esquema de base de datos…');
+      const sqlPath = getResourcesPath('scripts', 'init-schema.sql');
+      if (!fs.existsSync(sqlPath)) {
+        log('[schema] init-schema.sql no encontrado en', sqlPath);
+        return;
+      }
+      const sql = fs.readFileSync(sqlPath, 'utf-8');
+      log('[schema] ejecutando init-schema.sql (', sql.length, 'bytes)');
+      await c.query(sql);
+      log('[schema] schema aplicado OK');
+    } else {
+      log('[schema] tabla User ya existe, saltando schema');
+    }
 
-async function trySeed(databaseUrl) {
-  const seedSql = getResourcesPath('scripts', 'init-seed.sql');
-  if (!fs.existsSync(seedSql)) {
-    log('[seed] no hay init-seed.sql, saltando seed automático');
-    return;
-  }
-  try {
-    const pgPath = path.join(getResourcesPath(), 'node_modules', 'pg');
-    const { Client } = require(pgPath);
-    const c = new Client({ connectionString: databaseUrl });
-    await c.connect();
-    const sql = fs.readFileSync(seedSql, 'utf-8');
-    log('[seed] aplicando seed mínimo');
-    await c.query(sql);
-    await c.end();
-    log('[seed] OK');
+    // ¿Hay algún usuario? Si no, seed (idempotente con ON CONFLICT)
+    const u = await c.query(`SELECT count(*)::int AS n FROM "User"`);
+    if (u.rows[0].n === 0) {
+      const seedSql = getResourcesPath('scripts', 'init-seed.sql');
+      if (fs.existsSync(seedSql)) {
+        updateSplash('Creando cuenta inicial…');
+        log('[seed] 0 usuarios — aplicando seed (admin@brandhub.local)');
+        await c.query(fs.readFileSync(seedSql, 'utf-8'));
+        const check = await c.query(`SELECT count(*)::int AS n FROM "User"`);
+        log('[seed] OK — usuarios tras seed:', check.rows[0].n);
+      } else {
+        log('[seed] init-seed.sql no encontrado');
+      }
+    } else {
+      log('[seed]', u.rows[0].n, 'usuarios existentes, saltando seed');
+    }
   } catch (err) {
-    log('[seed] error (no crítico):', err.message);
+    log('[schema] error:', err.message);
+  } finally {
+    try { await c.end(); } catch {}
   }
 }
 
@@ -225,6 +240,32 @@ async function startNextServer() {
 
   const ok = await waitForServer(appUrl, 45000);
   if (!ok) throw new Error('Next server no respondió en 45s. Revisa logs en ' + LOG_PATH);
+
+  // Chequeo de salud de la DB: si el server está arriba pero la base de
+  // datos no responde, el login fallaría en silencio con "credenciales
+  // inválidas". Mejor avisar al usuario con un diálogo accionable.
+  try {
+    const res = await fetch(appUrl + '/api/health');
+    const health = await res.json();
+    if (!health?.checks?.database?.ok) {
+      log('[health] DB degradada:', JSON.stringify(health?.checks));
+      dialog.showMessageBox({
+        type: 'warning',
+        title: 'Base de datos no disponible',
+        message: 'BrandHub arrancó pero la base de datos no responde.',
+        detail:
+          'El login no funcionará hasta que se resuelva.\n\n' +
+          'Prueba a cerrar y volver a abrir BrandHub. Si persiste, puede que ' +
+          'un antivirus esté bloqueando postgres.exe o que el puerto 5433 esté ocupado.\n\n' +
+          'Logs: ' + LOG_PATH,
+        buttons: ['Entendido'],
+      });
+    } else {
+      log('[health] DB OK, latencia', health.checks.database.latencyMs, 'ms');
+    }
+  } catch (err) {
+    log('[health] no se pudo verificar salud:', err.message);
+  }
 }
 
 async function waitForServer(url, timeoutMs) {

@@ -22,12 +22,16 @@ export default async function LoginPage() {
 
         {/* Hint de cuenta demo - solo visible si hay datos demo (no producción real) */}
         <details className="mt-4 text-xs text-muted-foreground border border-dashed rounded-lg p-3">
-          <summary className="cursor-pointer font-medium">¿Es tu primera vez? Cuentas demo</summary>
+          <summary className="cursor-pointer font-medium">¿Es tu primera vez? Cuenta inicial</summary>
           <div className="mt-2 space-y-1 font-mono text-[11px]">
-            <p><strong>Owner:</strong> admin@acme.com / admin1234</p>
-            <p><strong>Manager:</strong> maria@acme.com / admin1234</p>
-            <p><strong>Agente:</strong> luis@acme.com / admin1234</p>
-            <p className="font-sans text-[10px] pt-1">O <code>admin@brandhub.local / admin1234</code> en app desktop recién instalada.</p>
+            <p><strong>Email:</strong> admin@brandhub.local</p>
+            <p><strong>Password:</strong> admin1234</p>
+            <p className="font-sans text-[10px] pt-2 border-t mt-2">
+              Si tu instalación cargó los datos de demostración, también existen
+              <code className="mx-1">admin@acme.com</code>,
+              <code className="mx-1">maria@acme.com</code> y
+              <code className="mx-1">luis@acme.com</code> (misma contraseña).
+            </p>
           </div>
         </details>
 
