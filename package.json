@@ -85,6 +85,10 @@
         "to": "app/node_modules/embedded-postgres"
       },
       {
+        "from": "node_modules/@embedded-postgres",
+        "to": "app/node_modules/@embedded-postgres"
+      },
+      {
         "from": "node_modules/async-exit-hook",
         "to": "app/node_modules/async-exit-hook"
       },
