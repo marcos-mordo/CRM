@@ -872,6 +872,39 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
+CREATE TABLE "Workflow" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "trigger" TEXT NOT NULL,
+    "conditions" JSONB,
+    "actions" JSONB NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "runsCount" INTEGER NOT NULL DEFAULT 0,
+    "lastRunAt" TIMESTAMP(3),
+    "organizationId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Workflow_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "WorkflowRun" (
+    "id" TEXT NOT NULL,
+    "workflowId" TEXT NOT NULL,
+    "trigger" TEXT NOT NULL,
+    "payload" JSONB NOT NULL,
+    "status" TEXT NOT NULL,
+    "detail" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "organizationId" TEXT NOT NULL,
+
+    CONSTRAINT "WorkflowRun_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "WebForm" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -1491,6 +1524,15 @@ CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "perio
 CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
 
 -- CreateIndex
+CREATE INDEX "Workflow_organizationId_trigger_active_idx" ON "Workflow"("organizationId", "trigger", "active");
+
+-- CreateIndex
+CREATE INDEX "WorkflowRun_workflowId_createdAt_idx" ON "WorkflowRun"("workflowId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "WorkflowRun_organizationId_idx" ON "WorkflowRun"("organizationId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "WebForm_slug_key" ON "WebForm"("slug");
 
 -- CreateIndex
@@ -1879,6 +1921,15 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Workflow" ADD CONSTRAINT "Workflow_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Workflow" ADD CONSTRAINT "Workflow_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "WorkflowRun" ADD CONSTRAINT "WorkflowRun_workflowId_fkey" FOREIGN KEY ("workflowId") REFERENCES "Workflow"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "WebForm" ADD CONSTRAINT "WebForm_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

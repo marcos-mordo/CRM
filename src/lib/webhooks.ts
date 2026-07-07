@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { prisma } from '@/lib/prisma';
+import { triggerWorkflows } from '@/lib/workflows';
 import type { WebhookEvent } from '@prisma/client';
 
 interface DispatchInput {
@@ -12,8 +13,17 @@ interface DispatchInput {
  * Dispatch fire-and-forget de un evento a todos los endpoints activos
  * suscritos. NO bloquea la request del usuario; los fallos quedan registrados
  * en WebhookDelivery para reintentar manualmente.
+ *
+ * También dispara los workflows de automatización de la org: cualquier
+ * evento webhook es a la vez un trigger de workflow.
  */
 export async function dispatchWebhook(input: DispatchInput): Promise<void> {
+  triggerWorkflows({
+    organizationId: input.organizationId,
+    trigger: input.event,
+    payload: input.payload,
+  });
+
   const endpoints = await prisma.webhookEndpoint.findMany({
     where: {
       organizationId: input.organizationId,
