@@ -94,6 +94,22 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Workflows: trigger LEAD_CREATED
+  const { triggerWorkflows } = await import('@/lib/workflows');
+  triggerWorkflows({
+    organizationId: ctx.organizationId,
+    trigger: 'LEAD_CREATED',
+    payload: {
+      leadId: lead.id,
+      firstName: lead.firstName,
+      lastName: lead.lastName,
+      email: lead.email,
+      phone: lead.phone,
+      source: lead.source,
+      estimatedValue: lead.estimatedValue ? Number(lead.estimatedValue) : null,
+    },
+  });
+
   // Notificar a managers
   await notifyManagers({
     organizationId: ctx.organizationId,

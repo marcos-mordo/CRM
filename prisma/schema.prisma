@@ -63,6 +63,7 @@ model Organization {
   pushSubscriptions  PushSubscription[]
   webForms           WebForm[]
   emailSequences     EmailSequence[]
+  workflows          Workflow[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -142,6 +143,7 @@ model User {
   pushSubscriptions PushSubscription[]
   webForms          WebForm[]      @relation("WebFormOwner")
   emailSequences    EmailSequence[]
+  workflows         Workflow[]     @relation("WorkflowCreator")
 
   @@index([organizationId])
   @@index([email])
@@ -1321,6 +1323,44 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// Workflow automation: "si pasa X → haz Y"
+model Workflow {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  trigger     String   // SALE_CREATED | SALE_SIGNED | SALE_CANCELLED | COMMISSION_APPROVED | COMMISSION_PAID | CUSTOMER_CREATED | LEAD_CREATED
+  conditions  Json?    // [{field, op: 'eq|neq|gt|lt|contains', value}]
+  actions     Json     // [{type: 'create_task|notify_managers|send_email|http_webhook', params: {...}}]
+  active      Boolean  @default(true)
+  runsCount   Int      @default(0)
+  lastRunAt   DateTime?
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User @relation("WorkflowCreator", fields: [createdById], references: [id])
+  runs           WorkflowRun[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, trigger, active])
+}
+
+model WorkflowRun {
+  id          String   @id @default(cuid())
+  workflowId  String
+  workflow    Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  trigger     String
+  payload     Json
+  status      String   // SUCCESS | FAILED | SKIPPED
+  detail      String?  @db.Text
+  createdAt   DateTime @default(now())
+  organizationId String
+
+  @@index([workflowId, createdAt])
+  @@index([organizationId])
 }
 
 // Web forms públicos embebibles (captura de leads desde tu web)

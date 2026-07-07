@@ -30,6 +30,7 @@ import {
   CalendarDays,
   FileBarChart,
   MessageCircle,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -62,6 +63,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/calendar', icon: CalendarDays, labelKey: 'calendar' },
         { href: '/chat', icon: MessageCircle, labelKey: 'chat' },
         { href: '/web-forms', icon: FileText, labelKey: 'webForms' },
+        { href: '/workflows', icon: Zap, labelKey: 'workflows' },
       ],
     },
     {

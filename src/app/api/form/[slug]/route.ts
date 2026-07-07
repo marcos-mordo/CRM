@@ -51,6 +51,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     data: { submissions: { increment: 1 } },
   });
 
+  // Workflows: trigger LEAD_CREATED
+  const { triggerWorkflows } = await import('@/lib/workflows');
+  triggerWorkflows({
+    organizationId: form.organization.id,
+    trigger: 'LEAD_CREATED',
+    payload: {
+      leadId: lead.id,
+      firstName,
+      lastName,
+      email,
+      phone,
+      source: `WebForm: ${form.name}`,
+    },
+  });
+
   // Notifica por email
   if (form.notifyEmails) {
     const to = form.notifyEmails.split(',').map((s) => s.trim()).filter(Boolean);
