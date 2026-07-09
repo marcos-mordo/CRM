@@ -872,6 +872,41 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
+CREATE TABLE "BookingPage" (
+    "id" TEXT NOT NULL,
+    "slug" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "description" TEXT,
+    "durationMinutes" INTEGER NOT NULL DEFAULT 30,
+    "bufferMinutes" INTEGER NOT NULL DEFAULT 0,
+    "availability" JSONB NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "userId" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "BookingPage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Booking" (
+    "id" TEXT NOT NULL,
+    "bookingPageId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "phone" TEXT,
+    "notes" TEXT,
+    "startsAt" TIMESTAMP(3) NOT NULL,
+    "endsAt" TIMESTAMP(3) NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'CONFIRMED',
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Booking_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Workflow" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -1524,6 +1559,18 @@ CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "perio
 CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "BookingPage_slug_key" ON "BookingPage"("slug");
+
+-- CreateIndex
+CREATE INDEX "BookingPage_organizationId_idx" ON "BookingPage"("organizationId");
+
+-- CreateIndex
+CREATE INDEX "Booking_bookingPageId_startsAt_idx" ON "Booking"("bookingPageId", "startsAt");
+
+-- CreateIndex
+CREATE INDEX "Booking_organizationId_startsAt_idx" ON "Booking"("organizationId", "startsAt");
+
+-- CreateIndex
 CREATE INDEX "Workflow_organizationId_trigger_active_idx" ON "Workflow"("organizationId", "trigger", "active");
 
 -- CreateIndex
@@ -1921,6 +1968,15 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BookingPage" ADD CONSTRAINT "BookingPage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "BookingPage" ADD CONSTRAINT "BookingPage_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Booking" ADD CONSTRAINT "Booking_bookingPageId_fkey" FOREIGN KEY ("bookingPageId") REFERENCES "BookingPage"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Workflow" ADD CONSTRAINT "Workflow_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
