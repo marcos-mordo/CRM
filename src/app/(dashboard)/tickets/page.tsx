@@ -6,13 +6,16 @@ import { Headphones } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { TicketsTable } from '@/components/tickets/tickets-table';
 import { TicketDialog } from '@/components/tickets/ticket-dialog';
+import { SlaSettingsButton } from '@/components/tickets/sla-settings';
+import { evaluateSla, DEFAULT_POLICIES, type SlaEvaluation } from '@/lib/sla';
+import { isAdmin } from '@/lib/auth-helpers';
 import { getTranslations } from 'next-intl/server';
 
 export default async function TicketsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Tickets');
 
-  const [tickets, contacts, users] = await Promise.all([
+  const [tickets, contacts, users, slaPolicies] = await Promise.all([
     prisma.ticket.findMany({
       where: { organizationId: session.user.organizationId },
       include: { contact: true, agent: true, _count: { select: { comments: true } } },
@@ -26,11 +29,36 @@ export default async function TicketsPage() {
       where: { organizationId: session.user.organizationId, active: true },
       orderBy: { name: 'asc' },
     }),
+    prisma.slaPolicy.findMany({
+      where: { organizationId: session.user.organizationId },
+    }),
   ]);
+
+  // Mapa de políticas por prioridad + evaluación por ticket (solo abiertos)
+  const policyMap = Object.fromEntries(
+    slaPolicies.map((p) => [p.priority, { firstResponseMins: p.firstResponseMins, resolutionMins: p.resolutionMins }])
+  );
+  const slaByTicket: Record<string, SlaEvaluation> = {};
+  if (slaPolicies.length > 0) {
+    for (const tk of tickets) {
+      if (['RESOLVED', 'CLOSED'].includes(tk.status)) continue;
+      slaByTicket[tk.id] = evaluateSla(tk, policyMap);
+    }
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${tickets.length} tickets`}>
+        {isAdmin(session.user.role) && (
+          <SlaSettingsButton
+            current={DEFAULT_POLICIES.map((d) => ({
+              priority: d.priority,
+              firstResponseMins: policyMap[d.priority]?.firstResponseMins ?? d.firstResponseMins,
+              resolutionMins: policyMap[d.priority]?.resolutionMins ?? d.resolutionMins,
+            }))}
+            configured={slaPolicies.length > 0}
+          />
+        )}
         <TicketDialog contacts={contacts} users={users} />
       </PageHeader>
 
@@ -38,7 +66,7 @@ export default async function TicketsPage() {
         {tickets.length === 0 ? (
           <EmptyState icon={Headphones} title={t('new')} action={<TicketDialog contacts={contacts} users={users} />} />
         ) : (
-          <TicketsTable tickets={tickets} users={users} />
+          <TicketsTable tickets={tickets} users={users} sla={slaByTicket} />
         )}
       </Card>
     </div>

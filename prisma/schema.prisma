@@ -66,6 +66,7 @@ model Organization {
   workflows          Workflow[]
   bookingPages       BookingPage[]
   savedReports       SavedReport[]
+  slaPolicies        SlaPolicy[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -791,6 +792,7 @@ model Ticket {
   status      TicketStatus   @default(OPEN)
   priority    TicketPriority @default(MEDIUM)
   category    String?
+  firstResponseAt DateTime?  // primera respuesta de un agente (para SLA)
   resolvedAt  DateTime?
   closedAt    DateTime?
   createdAt   DateTime       @default(now())
@@ -1327,6 +1329,19 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// SLA por prioridad de ticket
+model SlaPolicy {
+  id                 String   @id @default(cuid())
+  priority           TicketPriority
+  firstResponseMins  Int      // minutos hasta primera respuesta
+  resolutionMins     Int      // minutos hasta resolución
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  updatedAt          DateTime @updatedAt
+
+  @@unique([organizationId, priority])
 }
 
 // Report builder: informes guardados
