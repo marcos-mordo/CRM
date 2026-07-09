@@ -40,15 +40,15 @@
 | @menciones, adjuntos drag&drop, inline edit, bulk actions | ✅ | Attio/HubSpot |
 | Telegram bot, WhatsApp helper, mapa clientes | ✅ | Nadie de serie |
 
-### Brechas reales vs los líderes
-| # | Falta | Quién lo tiene | Impacto |
+### Brechas reales vs los líderes (estado julio 2026)
+| # | Falta | Quién lo tiene | Estado |
 |---|---|---|---|
-| 1 | **Workflow automation** (si pasa X → haz Y) | Todos (es SU feature estrella) | 🔴 Crítico |
-| 2 | **Report builder** (informes custom drag&drop) | Salesforce, Zoho | 🟠 Alto |
-| 3 | **Meeting scheduler** (links de reserva tipo Calendly) | HubSpot | 🟠 Alto |
-| 4 | **Merge de duplicados** (UI de fusión) | Todos | 🟡 Medio |
-| 5 | Email 2-way sync (Gmail/Outlook por usuario) | Todos | 🟡 Medio (OAuth complejo) |
-| 6 | SLAs en tickets | Zoho Desk, HubSpot Service | 🟡 Medio |
+| 1 | **Workflow automation** (si pasa X → haz Y) | Todos (es SU feature estrella) | ✅ Cerrada v1.0.8 |
+| 2 | **Meeting scheduler** (links de reserva tipo Calendly) | HubSpot | ✅ Cerrada v1.0.9 |
+| 3 | **Merge de duplicados** (UI de fusión) | Todos | ✅ Cerrada v1.0.9 |
+| 4 | **Report builder** (informes custom) | Salesforce, Zoho | ✅ Cerrada v1.1.0 |
+| 5 | SLAs en tickets | Zoho Desk, HubSpot Service | 🟡 Pendiente menor |
+| 6 | Email 2-way sync (Gmail/Outlook por usuario) | Todos | 🟡 Fase 2 (OAuth complejo) |
 | 7 | Llamadas/SMS integrados | Close | 🟢 Bajo (nicho, requiere Twilio $$) |
 | 8 | Custom objects completos | Attio, Salesforce | 🟢 Bajo (custom fields ya cubre 80%) |
 

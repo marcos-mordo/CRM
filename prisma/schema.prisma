@@ -65,6 +65,7 @@ model Organization {
   emailSequences     EmailSequence[]
   workflows          Workflow[]
   bookingPages       BookingPage[]
+  savedReports       SavedReport[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -146,6 +147,7 @@ model User {
   emailSequences    EmailSequence[]
   workflows         Workflow[]     @relation("WorkflowCreator")
   bookingPages      BookingPage[]  @relation("BookingPageOwner")
+  savedReports      SavedReport[]  @relation("SavedReportCreator")
 
   @@index([organizationId])
   @@index([email])
@@ -1325,6 +1327,22 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// Report builder: informes guardados
+model SavedReport {
+  id        String   @id @default(cuid())
+  name      String
+  // { entity, metric: 'count'|'sum', sumField?, groupBy, period: '30d'|'90d'|'year'|'all', chart: 'bar'|'line'|'pie'|'table' }
+  config    Json
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdById    String
+  createdBy      User @relation("SavedReportCreator", fields: [createdById], references: [id])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
 }
 
 // Meeting scheduler: páginas públicas de reserva (tipo Calendly)
