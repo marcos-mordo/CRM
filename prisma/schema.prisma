@@ -64,6 +64,7 @@ model Organization {
   webForms           WebForm[]
   emailSequences     EmailSequence[]
   workflows          Workflow[]
+  bookingPages       BookingPage[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -144,6 +145,7 @@ model User {
   webForms          WebForm[]      @relation("WebFormOwner")
   emailSequences    EmailSequence[]
   workflows         Workflow[]     @relation("WorkflowCreator")
+  bookingPages      BookingPage[]  @relation("BookingPageOwner")
 
   @@index([organizationId])
   @@index([email])
@@ -1323,6 +1325,47 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// Meeting scheduler: páginas públicas de reserva (tipo Calendly)
+model BookingPage {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  description     String?
+  durationMinutes Int      @default(30)
+  bufferMinutes   Int      @default(0)
+  // { "1": ["09:00","17:00"], "2": [...], ... } — weekday ISO (1=lunes) → [inicio, fin]
+  availability    Json
+  active          Boolean  @default(true)
+
+  userId         String
+  user           User   @relation("BookingPageOwner", fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookings       Booking[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+}
+
+model Booking {
+  id            String   @id @default(cuid())
+  bookingPageId String
+  bookingPage   BookingPage @relation(fields: [bookingPageId], references: [id], onDelete: Cascade)
+  name          String
+  email         String
+  phone         String?
+  notes         String?  @db.Text
+  startsAt      DateTime
+  endsAt        DateTime
+  status        String   @default("CONFIRMED") // CONFIRMED | CANCELLED
+  organizationId String
+  createdAt     DateTime @default(now())
+
+  @@index([bookingPageId, startsAt])
+  @@index([organizationId, startsAt])
 }
 
 // Workflow automation: "si pasa X → haz Y"

@@ -61,6 +61,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/pipeline', icon: Kanban, labelKey: 'pipeline' },
         { href: '/tasks', icon: CheckSquare, labelKey: 'tasks' },
         { href: '/calendar', icon: CalendarDays, labelKey: 'calendar' },
+        { href: '/bookings', icon: CalendarDays, labelKey: 'bookings' },
         { href: '/chat', icon: MessageCircle, labelKey: 'chat' },
         { href: '/web-forms', icon: FileText, labelKey: 'webForms' },
         { href: '/workflows', icon: Zap, labelKey: 'workflows' },
