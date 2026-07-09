@@ -66,7 +66,45 @@ export async function addComment(ticketId: string, content: string, internal: bo
       authorName: session.user.name,
     },
   });
+
+  // SLA: la primera respuesta pública de un agente marca firstResponseAt
+  if (!internal) {
+    await prisma.ticket.updateMany({
+      where: { id: ticketId, organizationId: session.user.organizationId, firstResponseAt: null },
+      data: { firstResponseAt: new Date() },
+    });
+  }
+
   revalidatePath(`/tickets/${ticketId}`);
+  return { ok: true };
+}
+
+// ===== SLA policies =====
+
+export async function saveSlaPolicies(
+  policies: { priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'; firstResponseMins: number; resolutionMins: number }[]
+) {
+  const session = await requireAuth();
+  if (!['OWNER', 'ADMIN'].includes(session.user.role)) throw new Error('Solo administradores');
+
+  await Promise.all(
+    policies.map((p) =>
+      prisma.slaPolicy.upsert({
+        where: { organizationId_priority: { organizationId: session.user.organizationId, priority: p.priority } },
+        create: {
+          organizationId: session.user.organizationId,
+          priority: p.priority,
+          firstResponseMins: Math.max(5, p.firstResponseMins),
+          resolutionMins: Math.max(15, p.resolutionMins),
+        },
+        update: {
+          firstResponseMins: Math.max(5, p.firstResponseMins),
+          resolutionMins: Math.max(15, p.resolutionMins),
+        },
+      })
+    )
+  );
+  revalidatePath('/tickets');
   return { ok: true };
 }
 

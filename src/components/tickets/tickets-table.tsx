@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { SlaBadge } from '@/components/tickets/sla-badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MessageSquare, MoreHorizontal, Search, Trash2 } from 'lucide-react';
@@ -33,7 +34,7 @@ const priorityVariant: Record<TicketPriority, string> = {
   URGENT: 'bg-red-100 text-red-700',
 };
 
-export function TicketsTable({ tickets, users }: { tickets: Row[]; users: User[] }) {
+export function TicketsTable({ tickets, users, sla = {} }: { tickets: Row[]; users: User[]; sla?: Record<string, import('@/lib/sla').SlaEvaluation> }) {
   const t = useTranslations();
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -111,6 +112,7 @@ export function TicketsTable({ tickets, users }: { tickets: Row[]; users: User[]
                     {tk._count.comments}
                   </Badge>
                 )}
+                {sla[tk.id] && <span className="ml-2 inline-block"><SlaBadge sla={sla[tk.id]} /></span>}
               </TableCell>
               <TableCell className="text-sm">
                 {tk.contact ? `${tk.contact.firstName} ${tk.contact.lastName}` : '—'}
