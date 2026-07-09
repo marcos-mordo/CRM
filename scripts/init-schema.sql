@@ -872,6 +872,19 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
+CREATE TABLE "SavedReport" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "config" JSONB NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "createdById" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SavedReport_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "BookingPage" (
     "id" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -1559,6 +1572,9 @@ CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "perio
 CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
 
 -- CreateIndex
+CREATE INDEX "SavedReport_organizationId_idx" ON "SavedReport"("organizationId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "BookingPage_slug_key" ON "BookingPage"("slug");
 
 -- CreateIndex
@@ -1970,6 +1986,12 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "SavedReport" ADD CONSTRAINT "SavedReport_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SavedReport" ADD CONSTRAINT "SavedReport_createdById_fkey" FOREIGN KEY ("createdById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "BookingPage" ADD CONSTRAINT "BookingPage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -2092,3 +2114,13 @@ ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_organizationId_fkey" F
 -- AddForeignKey
 ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_endCustomerId_fkey" FOREIGN KEY ("endCustomerId") REFERENCES "EndCustomer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+┌─────────────────────────────────────────────────────────┐
+│  Update available 5.22.0 -> 7.8.0                       │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘

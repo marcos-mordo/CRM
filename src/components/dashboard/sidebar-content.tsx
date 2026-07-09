@@ -65,6 +65,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/chat', icon: MessageCircle, labelKey: 'chat' },
         { href: '/web-forms', icon: FileText, labelKey: 'webForms' },
         { href: '/workflows', icon: Zap, labelKey: 'workflows' },
+        { href: '/report-builder', icon: FileBarChart, labelKey: 'reportBuilder' },
       ],
     },
     {
