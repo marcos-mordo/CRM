@@ -154,10 +154,10 @@ async function runWorkflows(input: {
     for (const action of wf.actions as Action[]) {
       try {
         const r = await executeAction(action, input.payload, input.organizationId);
-        results.push(`✓ ${action.type}: ${r}`);
+        results.push(`[OK] ${action.type}: ${r}`);
       } catch (err: any) {
         failed = true;
-        results.push(`✗ ${action.type}: ${err.message}`);
+        results.push(`[ERR] ${action.type}: ${err.message}`);
       }
     }
 
