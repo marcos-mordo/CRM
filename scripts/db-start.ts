@@ -17,6 +17,10 @@ async function main() {
     password: PASSWORD,
     port: PORT,
     persistent: true,
+    // Fuerza UTF-8 en el cluster. Sin esto, initdb en Windows con locale
+    // español crea la DB en WIN1252 y cualquier emoji/símbolo Unicode
+    // (✓, →, 😀, chino…) rompe las queries con error 22P05.
+    initdbFlags: ['--encoding=UTF8', '--lc-collate=C', '--lc-ctype=C'],
   });
 
   if (isFirstRun) {
