@@ -12,6 +12,13 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
+  // imapflow y pino usan require dinámicos que el tracer de Next no sigue.
+  // Forzamos su inclusión en el bundle standalone (email sync 2-way).
+  outputFileTracingIncludes: {
+    '/api/cron/sync-emails': ['./node_modules/imapflow/**/*', './node_modules/pino/**/*', './node_modules/@zone-eu/**/*'],
+    '/settings/email': ['./node_modules/imapflow/**/*', './node_modules/pino/**/*', './node_modules/@zone-eu/**/*'],
+    '/contacts/**': ['./node_modules/imapflow/**/*', './node_modules/pino/**/*', './node_modules/@zone-eu/**/*'],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',

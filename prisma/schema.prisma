@@ -67,6 +67,7 @@ model Organization {
   bookingPages       BookingPage[]
   savedReports       SavedReport[]
   slaPolicies        SlaPolicy[]
+  emailAccounts      EmailAccount[]
   auditLogs          AuditLog[]
   notifications      Notification[]
   webhooks           WebhookEndpoint[]
@@ -149,6 +150,7 @@ model User {
   workflows         Workflow[]     @relation("WorkflowCreator")
   bookingPages      BookingPage[]  @relation("BookingPageOwner")
   savedReports      SavedReport[]  @relation("SavedReportCreator")
+  emailAccount      EmailAccount?
 
   @@index([organizationId])
   @@index([email])
@@ -256,6 +258,7 @@ model Contact {
   noteLinks   NoteList[]
   tags        ContactTag[]
   attachments Attachment[]
+  emailMessages EmailMessage[]
 
   @@index([organizationId])
   @@index([email])
@@ -1329,6 +1332,54 @@ model Goal {
 
   @@unique([userId, period, metric])
   @@index([organizationId, period])
+}
+
+// Email sync 2-way por usuario (IMAP/SMTP con app passwords)
+model EmailAccount {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email       String
+  imapHost    String
+  imapPort    Int      @default(993)
+  smtpHost    String
+  smtpPort    Int      @default(465)
+  username    String
+  passwordEnc String   @db.Text // AES-256-GCM, clave derivada de NEXTAUTH_SECRET
+  active      Boolean  @default(true)
+  lastSyncAt  DateTime?
+  lastError   String?  @db.Text
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  messages       EmailMessage[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId, active])
+}
+
+model EmailMessage {
+  id         String   @id @default(cuid())
+  accountId  String
+  account    EmailAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  direction  String   // IN | OUT
+  fromAddr   String
+  toAddr     String
+  subject    String
+  snippet    String?  @db.Text
+  sentAt     DateTime
+  messageId  String?  // Message-ID de la cabecera, para dedupe
+
+  contactId  String?
+  contact    Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  organizationId String
+
+  createdAt  DateTime @default(now())
+
+  @@unique([accountId, messageId])
+  @@index([contactId, sentAt])
+  @@index([organizationId])
 }
 
 // SLA por prioridad de ticket

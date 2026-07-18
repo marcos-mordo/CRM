@@ -873,6 +873,45 @@ CREATE TABLE "Goal" (
 );
 
 -- CreateTable
+CREATE TABLE "EmailAccount" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "imapHost" TEXT NOT NULL,
+    "imapPort" INTEGER NOT NULL DEFAULT 993,
+    "smtpHost" TEXT NOT NULL,
+    "smtpPort" INTEGER NOT NULL DEFAULT 465,
+    "username" TEXT NOT NULL,
+    "passwordEnc" TEXT NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "lastSyncAt" TIMESTAMP(3),
+    "lastError" TEXT,
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "EmailAccount_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "EmailMessage" (
+    "id" TEXT NOT NULL,
+    "accountId" TEXT NOT NULL,
+    "direction" TEXT NOT NULL,
+    "fromAddr" TEXT NOT NULL,
+    "toAddr" TEXT NOT NULL,
+    "subject" TEXT NOT NULL,
+    "snippet" TEXT,
+    "sentAt" TIMESTAMP(3) NOT NULL,
+    "messageId" TEXT,
+    "contactId" TEXT,
+    "organizationId" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "EmailMessage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "SlaPolicy" (
     "id" TEXT NOT NULL,
     "priority" "TicketPriority" NOT NULL,
@@ -1585,6 +1624,21 @@ CREATE INDEX "Goal_organizationId_period_idx" ON "Goal"("organizationId", "perio
 CREATE UNIQUE INDEX "Goal_userId_period_metric_key" ON "Goal"("userId", "period", "metric");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "EmailAccount_userId_key" ON "EmailAccount"("userId");
+
+-- CreateIndex
+CREATE INDEX "EmailAccount_organizationId_active_idx" ON "EmailAccount"("organizationId", "active");
+
+-- CreateIndex
+CREATE INDEX "EmailMessage_contactId_sentAt_idx" ON "EmailMessage"("contactId", "sentAt");
+
+-- CreateIndex
+CREATE INDEX "EmailMessage_organizationId_idx" ON "EmailMessage"("organizationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "EmailMessage_accountId_messageId_key" ON "EmailMessage"("accountId", "messageId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "SlaPolicy_organizationId_priority_key" ON "SlaPolicy"("organizationId", "priority");
 
 -- CreateIndex
@@ -2002,6 +2056,18 @@ ALTER TABLE "Goal" ADD CONSTRAINT "Goal_userId_fkey" FOREIGN KEY ("userId") REFE
 ALTER TABLE "Goal" ADD CONSTRAINT "Goal_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "EmailAccount" ADD CONSTRAINT "EmailAccount_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailAccount" ADD CONSTRAINT "EmailAccount_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailMessage" ADD CONSTRAINT "EmailMessage_accountId_fkey" FOREIGN KEY ("accountId") REFERENCES "EmailAccount"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "EmailMessage" ADD CONSTRAINT "EmailMessage_contactId_fkey" FOREIGN KEY ("contactId") REFERENCES "Contact"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "SlaPolicy" ADD CONSTRAINT "SlaPolicy_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -2133,13 +2199,3 @@ ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_organizationId_fkey" F
 -- AddForeignKey
 ALTER TABLE "PortalSession" ADD CONSTRAINT "PortalSession_endCustomerId_fkey" FOREIGN KEY ("endCustomerId") REFERENCES "EndCustomer"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
-┌─────────────────────────────────────────────────────────┐
-│  Update available 5.22.0 -> 7.8.0                       │
-│                                                         │
-│  This is a major update - please follow the guide at    │
-│  https://pris.ly/d/major-version-upgrade                │
-│                                                         │
-│  Run the following to update                            │
-│    npm i --save-dev prisma@latest                       │
-│    npm i @prisma/client@latest                          │
-└─────────────────────────────────────────────────────────┘
