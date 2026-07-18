@@ -47,7 +47,7 @@ export async function createDeal(input: z.infer<typeof dealSchema>) {
 
 export async function updateDeal(id: string, input: Partial<z.infer<typeof dealSchema>>) {
   const session = await requireAuth();
-  const data: any = { ...input };
+  const data: any = { ...input, lastActivityAt: new Date() };
   if (input.expectedCloseDate) data.expectedCloseDate = new Date(input.expectedCloseDate);
   if (input.contactId === '') data.contactId = null;
   if (input.companyId === '') data.companyId = null;
@@ -68,7 +68,7 @@ export async function moveDeal(dealId: string, stageId: string) {
 
   await prisma.deal.update({
     where: { id: dealId, organizationId: session.user.organizationId },
-    data: { stageId, probability: stage.probability },
+    data: { stageId, probability: stage.probability, lastActivityAt: new Date() },
   });
   revalidatePath('/pipeline');
   return { ok: true };

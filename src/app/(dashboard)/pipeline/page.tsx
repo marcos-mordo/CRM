@@ -9,7 +9,7 @@ export default async function PipelinePage() {
   const session = await requireAuth();
   const t = await getTranslations('Pipeline');
 
-  const [pipeline, contacts, companies, users] = await Promise.all([
+  const [pipeline, contacts, companies, users, org] = await Promise.all([
     prisma.pipeline.findFirst({
       where: { organizationId: session.user.organizationId, isDefault: true },
       include: {
@@ -37,6 +37,10 @@ export default async function PipelinePage() {
       where: { organizationId: session.user.organizationId, active: true },
       orderBy: { name: 'asc' },
     }),
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { rottingDays: true },
+    }),
   ]);
 
   if (!pipeline) {
@@ -54,6 +58,7 @@ export default async function PipelinePage() {
         contacts={contacts}
         companies={companies}
         users={users}
+        rottingDays={org?.rottingDays ?? 14}
       />
     </div>
   );

@@ -10,6 +10,7 @@ import { WebhooksManager } from '@/components/settings/webhooks-manager';
 import { ApiTokensManager } from '@/components/settings/api-tokens-manager';
 import { TagsManager } from '@/components/settings/tags-manager';
 import { ServerUrlCard } from '@/components/settings/server-url-card';
+import { SalesIntelCard } from '@/components/settings/sales-intel-card';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
@@ -75,6 +76,7 @@ export default async function SettingsPage() {
               <OrgSettingsForm organization={org} />
             </CardContent>
           </Card>
+          <SalesIntelCard rottingDays={org.rottingDays} roundRobinEnabled={org.roundRobinEnabled} />
         </TabsContent>
 
         <TabsContent value="team" className="space-y-4">
