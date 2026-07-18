@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ContactTimeline } from '@/components/contacts/contact-timeline';
 import { AttachmentsPanel } from '@/components/attachments/attachments-panel';
+import { ComposeEmailButton } from '@/components/contacts/compose-email-button';
 import { Mail, Phone, Building2, Briefcase, Edit, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -24,7 +25,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
   if (!contact) return notFound();
 
   // Cargar todas las interacciones en paralelo
-  const [tasks, notes, deals, activities, attachments] = await Promise.all([
+  const [tasks, notes, deals, activities, attachments, emails, hasEmailAccount] = await Promise.all([
     prisma.task.findMany({
       where: { organizationId: session.user.organizationId, contactId: id },
       orderBy: { createdAt: 'desc' },
@@ -54,6 +55,13 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
       orderBy: { createdAt: 'desc' },
       select: { id: true, filename: true, size: true, mimeType: true, type: true, createdAt: true, url: true },
     }),
+    prisma.emailMessage.findMany({
+      where: { organizationId: session.user.organizationId, contactId: id },
+      orderBy: { sentAt: 'desc' },
+      take: 50,
+      select: { id: true, direction: true, fromAddr: true, toAddr: true, subject: true, snippet: true, sentAt: true },
+    }),
+    prisma.emailAccount.findUnique({ where: { userId: session.user.id }, select: { id: true } }),
   ]);
 
   return (
@@ -65,9 +73,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
           </Button>
         )}
         {contact.email && (
-          <Button asChild variant="outline" size="sm">
-            <a href={`mailto:${contact.email}`}><Mail className="h-4 w-4" /> Email</a>
-          </Button>
+          hasEmailAccount
+            ? <ComposeEmailButton contactId={id} contactName={contact.firstName} contactEmail={contact.email} />
+            : <Button asChild variant="outline" size="sm">
+                <a href={`mailto:${contact.email}`}><Mail className="h-4 w-4" /> Email</a>
+              </Button>
         )}
         {contact.phone && (
           <Button asChild variant="outline" size="sm">
@@ -154,6 +164,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             notes={notes}
             deals={deals}
             activities={activities}
+            emails={emails}
           />
         </div>
       </div>

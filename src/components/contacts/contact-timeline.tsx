@@ -8,7 +8,7 @@ import { CheckSquare, StickyNote, Handshake, Phone, Mail, Activity as ActivityIc
 import { formatDate } from '@/lib/utils';
 
 type Item = {
-  kind: 'task' | 'note' | 'deal' | 'activity';
+  kind: 'task' | 'note' | 'deal' | 'activity' | 'email';
   at: Date;
   title: string;
   detail?: string;
@@ -17,15 +17,16 @@ type Item = {
 };
 
 export function ContactTimeline({
-  tasks, notes, deals, activities,
+  tasks, notes, deals, activities, emails = [],
 }: {
   contactId: string;
   tasks: any[];
   notes: any[];
   deals: any[];
   activities: any[];
+  emails?: any[];
 }) {
-  const [filter, setFilter] = useState<'all' | 'task' | 'note' | 'deal' | 'activity'>('all');
+  const [filter, setFilter] = useState<'all' | 'task' | 'note' | 'deal' | 'activity' | 'email'>('all');
 
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
@@ -61,8 +62,18 @@ export function ContactTimeline({
         meta: a.type,
       });
     }
+    for (const e of emails) {
+      out.push({
+        kind: 'email',
+        at: e.sentAt,
+        title: e.subject,
+        detail: e.snippet ?? undefined,
+        by: e.direction === 'OUT' ? `→ ${e.toAddr}` : `← ${e.fromAddr}`,
+        meta: e.direction === 'OUT' ? 'enviado' : 'recibido',
+      });
+    }
     return out.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
-  }, [tasks, notes, deals, activities]);
+  }, [tasks, notes, deals, activities, emails]);
 
   const filtered = filter === 'all' ? items : items.filter((i) => i.kind === filter);
 
@@ -72,6 +83,7 @@ export function ContactTimeline({
       case 'note': return StickyNote;
       case 'deal': return Handshake;
       case 'activity': return ActivityIcon;
+      case 'email': return Mail;
     }
   };
 
@@ -81,6 +93,7 @@ export function ContactTimeline({
       case 'note': return 'text-amber-500 bg-amber-500/10';
       case 'deal': return 'text-emerald-500 bg-emerald-500/10';
       case 'activity': return 'text-purple-500 bg-purple-500/10';
+      case 'email': return 'text-cyan-500 bg-cyan-500/10';
     }
   };
 
@@ -94,6 +107,7 @@ export function ContactTimeline({
             <TabsTrigger value="note">Notas <Badge variant="secondary" className="ml-2">{notes.length}</Badge></TabsTrigger>
             <TabsTrigger value="deal">Deals <Badge variant="secondary" className="ml-2">{deals.length}</Badge></TabsTrigger>
             <TabsTrigger value="activity">Actividad <Badge variant="secondary" className="ml-2">{activities.length}</Badge></TabsTrigger>
+            <TabsTrigger value="email">Emails <Badge variant="secondary" className="ml-2">{emails.length}</Badge></TabsTrigger>
           </TabsList>
         </Tabs>
       </CardHeader>

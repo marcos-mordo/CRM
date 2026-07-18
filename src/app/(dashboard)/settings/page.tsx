@@ -57,6 +57,9 @@ export default async function SettingsPage() {
           <TabsTrigger value="api-tokens">API tokens</TabsTrigger>
           <TabsTrigger value="tags">Etiquetas</TabsTrigger>
           <TabsTrigger value="device">Dispositivo</TabsTrigger>
+          <TabsTrigger value="email" asChild>
+            <Link href="/settings/email">Email</Link>
+          </TabsTrigger>
           <TabsTrigger value="billing" asChild>
             <Link href="/settings/billing">Billing</Link>
           </TabsTrigger>

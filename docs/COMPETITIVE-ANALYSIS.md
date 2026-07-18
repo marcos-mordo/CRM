@@ -48,7 +48,7 @@
 | 3 | **Merge de duplicados** (UI de fusión) | Todos | ✅ Cerrada v1.0.9 |
 | 4 | **Report builder** (informes custom) | Salesforce, Zoho | ✅ Cerrada v1.1.0 |
 | 5 | SLAs en tickets | Zoho Desk, HubSpot Service | ✅ Cerrada v1.1.1 |
-| 6 | Email 2-way sync (Gmail/Outlook por usuario) | Todos | 🟡 Fase 2 (OAuth complejo) |
+| 6 | Email 2-way sync (Gmail/Outlook por usuario) | Todos | ✅ Cerrada v1.2.0 (IMAP/SMTP con app passwords; OAuth = mejora futura) |
 | 7 | Llamadas/SMS integrados | Close | 🟢 Bajo (nicho, requiere Twilio $$) |
 | 8 | Custom objects completos | Attio, Salesforce | 🟢 Bajo (custom fields ya cubre 80%) |
 
