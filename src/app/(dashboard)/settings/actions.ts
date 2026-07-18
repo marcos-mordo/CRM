@@ -30,6 +30,24 @@ export async function updateOrganization(input: z.infer<typeof orgSchema>) {
   return { ok: true };
 }
 
+const salesIntelSchema = z.object({
+  rottingDays: z.number().int().min(1).max(365),
+  roundRobinEnabled: z.boolean(),
+});
+
+export async function updateSalesIntel(input: z.infer<typeof salesIntelSchema>) {
+  const session = await requireAuth();
+  if (!isAdmin(session.user.role)) throw new Error('No autorizado');
+  const parsed = salesIntelSchema.parse(input);
+  await prisma.organization.update({
+    where: { id: session.user.organizationId },
+    data: { rottingDays: parsed.rottingDays, roundRobinEnabled: parsed.roundRobinEnabled },
+  });
+  revalidatePath('/settings');
+  revalidatePath('/pipeline');
+  return { ok: true };
+}
+
 const inviteSchema = z.object({
   name: z.string().min(1).max(80),
   email: z.string().email(),

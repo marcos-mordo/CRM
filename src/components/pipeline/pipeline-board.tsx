@@ -24,9 +24,17 @@ interface Props {
   contacts: Contact[];
   companies: Company[];
   users: User[];
+  rottingDays?: number;
 }
 
-export function PipelineBoard({ pipeline, contacts, companies, users }: Props) {
+function rotFor(lastActivityAt: Date | string, rottingDays: number): { state: 'fresh' | 'warm' | 'rotting'; days: number } {
+  const days = Math.floor((Date.now() - new Date(lastActivityAt).getTime()) / 86400000);
+  if (days >= rottingDays) return { state: 'rotting', days };
+  if (days >= Math.ceil(rottingDays / 2)) return { state: 'warm', days };
+  return { state: 'fresh', days };
+}
+
+export function PipelineBoard({ pipeline, contacts, companies, users, rottingDays = 14 }: Props) {
   const t = useTranslations('Pipeline');
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -120,6 +128,19 @@ export function PipelineBoard({ pipeline, contacts, companies, users }: Props) {
                     className="p-3 cursor-pointer hover:shadow-md transition border-l-4"
                     style={{ borderLeftColor: stage.color }}
                   >
+                    {(() => {
+                      const rot = rotFor(deal.lastActivityAt, rottingDays);
+                      if (rot.state === 'fresh') return null;
+                      return (
+                        <div className={`flex items-center gap-1 text-[10px] font-medium mb-1.5 rounded px-1.5 py-0.5 w-fit ${
+                          rot.state === 'rotting'
+                            ? 'bg-red-500/15 text-red-700 dark:text-red-400'
+                            : 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                        }`} title={`${rot.days} días sin actividad`}>
+                          {rot.state === 'rotting' ? '🥀' : '⏳'} {rot.days}d sin tocar
+                        </div>
+                      );
+                    })()}
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-medium text-sm flex-1 line-clamp-2">{deal.title}</p>
                       <div onClick={(e) => e.stopPropagation()}>

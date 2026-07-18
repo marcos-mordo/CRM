@@ -31,6 +31,7 @@ import {
   FileBarChart,
   MessageCircle,
   Zap,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -66,6 +67,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/web-forms', icon: FileText, labelKey: 'webForms' },
         { href: '/workflows', icon: Zap, labelKey: 'workflows' },
         { href: '/report-builder', icon: FileBarChart, labelKey: 'reportBuilder' },
+        { href: '/sales-analytics', icon: TrendingUp, labelKey: 'salesAnalytics' },
       ],
     },
     {

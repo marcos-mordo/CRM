@@ -25,6 +25,10 @@ model Organization {
   address     String?
   currency    String   @default("USD")
   timezone    String   @default("America/Mexico_City")
+  // Sales Intelligence
+  rottingDays       Int     @default(14) // días sin actividad → deal "pudriéndose"
+  roundRobinEnabled Boolean @default(false)
+  roundRobinPointer Int     @default(0)  // puntero de rotación de leads
   locale      String   @default("es")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -375,6 +379,7 @@ model Deal {
   expectedCloseDate DateTime?
   closedAt      DateTime?
   lostReason    String?
+  lastActivityAt DateTime  @default(now()) // para deal rotting
   source        String?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt

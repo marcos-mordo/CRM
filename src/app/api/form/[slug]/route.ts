@@ -33,6 +33,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const email = body.email;
   const phone = body.phone || body.tel;
 
+  const { pickRoundRobinOwner } = await import('@/lib/sales-intel');
+  const rrOwner = await pickRoundRobinOwner(form.organization.id);
+
   const lead = await prisma.lead.create({
     data: {
       firstName,
@@ -42,6 +45,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       status: 'NEW',
       source: `WebForm: ${form.name}`,
       notes: JSON.stringify(body, null, 2),
+      ownerId: rrOwner,
       organizationId: form.organization.id,
     },
   });

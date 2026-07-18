@@ -78,6 +78,10 @@ export async function POST(req: NextRequest) {
     : '';
   const fullNotes = [parsed.data.notes, extraNotes].filter(Boolean).join('\n\n');
 
+  // Round-robin: asigna automáticamente a un rep si está activado
+  const { pickRoundRobinOwner } = await import('@/lib/sales-intel');
+  const rrOwner = await pickRoundRobinOwner(ctx.organizationId);
+
   const lead = await prisma.lead.create({
     data: {
       firstName: parsed.data.firstName,
@@ -90,6 +94,7 @@ export async function POST(req: NextRequest) {
       status: 'NEW',
       estimatedValue: parsed.data.estimatedValue,
       notes: fullNotes || null,
+      ownerId: rrOwner,
       organizationId: ctx.organizationId,
     },
   });
