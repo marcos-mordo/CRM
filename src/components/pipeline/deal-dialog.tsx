@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Activity } from 'lucide-react';
+import { LogActivityDialog } from '@/components/activities/log-activity-dialog';
 import { createDeal, updateDeal } from '@/app/(dashboard)/pipeline/actions';
 import type { Contact, Company, Deal, Stage, User } from '@prisma/client';
 
@@ -74,7 +75,16 @@ export function DealDialog({ deal, pipeline, contacts, companies, users, open, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{deal ? t('Common.edit') : t('Pipeline.newDeal')}</DialogTitle>
+          <div className="flex items-center justify-between gap-2 pr-6">
+            <DialogTitle>{deal ? t('Common.edit') : t('Pipeline.newDeal')}</DialogTitle>
+            {deal && (
+              <LogActivityDialog
+                dealId={deal.id}
+                contactId={(deal as any).contactId ?? undefined}
+                trigger={<Button type="button" variant="outline" size="sm"><Activity className="h-4 w-4" /> Registrar actividad</Button>}
+              />
+            )}
+          </div>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">

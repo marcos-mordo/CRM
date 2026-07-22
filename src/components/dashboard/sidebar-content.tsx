@@ -33,6 +33,7 @@ import {
   Zap,
   TrendingUp,
   Upload,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -62,6 +63,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/leads', icon: UserPlus, labelKey: 'leads' },
         { href: '/pipeline', icon: Kanban, labelKey: 'pipeline' },
         { href: '/tasks', icon: CheckSquare, labelKey: 'tasks' },
+        { href: '/activities', icon: Activity, labelKey: 'activities' },
         { href: '/calendar', icon: CalendarDays, labelKey: 'calendar' },
         { href: '/bookings', icon: CalendarDays, labelKey: 'bookings' },
         { href: '/chat', icon: MessageCircle, labelKey: 'chat' },
