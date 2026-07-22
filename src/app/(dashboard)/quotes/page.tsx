@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { FileText } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { QuotesTable } from '@/components/quotes/quotes-table';
@@ -26,6 +27,7 @@ export default async function QuotesPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${quotes.length} cotizaciones`}>
+        <ExportButton entity="quotes" />
         <QuoteDialog products={products} />
       </PageHeader>
 

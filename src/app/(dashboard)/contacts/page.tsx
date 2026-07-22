@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { Users, Merge } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { ContactsTable } from '@/components/contacts/contacts-table';
@@ -36,6 +37,7 @@ export default async function ContactsPage() {
         <Button asChild variant="outline" size="sm">
           <Link href="/contacts/duplicates"><Merge className="h-4 w-4" /> Duplicados</Link>
         </Button>
+        <ExportButton entity="contacts" />
         <NewContactButton companies={companies} users={users} />
       </PageHeader>
 

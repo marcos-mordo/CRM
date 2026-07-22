@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { PipelineBoard } from '@/components/pipeline/pipeline-board';
 import { NewDealButton } from '@/components/pipeline/new-deal-button';
+import { ExportButton } from '@/components/export-button';
 import { getTranslations } from 'next-intl/server';
 
 export default async function PipelinePage() {
@@ -50,6 +51,7 @@ export default async function PipelinePage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={pipeline.name}>
+        <ExportButton entity="deals" />
         <NewDealButton pipeline={pipeline} contacts={contacts} companies={companies} users={users} />
       </PageHeader>
 
