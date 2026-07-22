@@ -19,8 +19,9 @@ const nextConfig = {
     '/settings/email': ['./node_modules/imapflow/**/*', './node_modules/pino/**/*', './node_modules/@zone-eu/**/*'],
     '/contacts/**': ['./node_modules/imapflow/**/*', './node_modules/pino/**/*', './node_modules/@zone-eu/**/*'],
     // exceljs tiene require dinámicos (archiver, saxes); forzamos su inclusión
-    // en el standalone para que el export a Excel funcione en el .exe.
+    // en el standalone para que el export/import a Excel funcione en el .exe.
     '/api/export/**': ['./node_modules/exceljs/**/*'],
+    '/import': ['./node_modules/exceljs/**/*'],
   },
   experimental: {
     serverActions: {
