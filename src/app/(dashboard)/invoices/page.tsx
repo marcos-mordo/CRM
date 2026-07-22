@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { Receipt } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { InvoicesTable } from '@/components/invoices/invoices-table';
@@ -26,6 +27,7 @@ export default async function InvoicesPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${invoices.length} facturas`}>
+        <ExportButton entity="invoices" />
         <InvoiceDialog products={products} />
       </PageHeader>
 

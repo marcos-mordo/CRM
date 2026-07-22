@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { UserPlus } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { LeadsTable } from '@/components/leads/leads-table';
@@ -27,6 +28,7 @@ export default async function LeadsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${leads.length} leads en cartera`}>
+        <ExportButton entity="leads" />
         <LeadDialog users={users} />
       </PageHeader>
 

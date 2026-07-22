@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
 import { UserCheck, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { ExportButton } from '@/components/export-button';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { EndCustomersTable } from '@/components/end-customers/end-customers-table';
@@ -30,6 +31,7 @@ export default async function EndCustomersPage() {
           </Link>
         </Button>
         <ImportCsvButton />
+        <ExportButton entity="end-customers" />
         <EndCustomerDialog />
       </PageHeader>
 

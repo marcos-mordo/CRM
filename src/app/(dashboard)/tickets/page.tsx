@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { Headphones } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { TicketsTable } from '@/components/tickets/tickets-table';
@@ -59,6 +60,7 @@ export default async function TicketsPage() {
             configured={slaPolicies.length > 0}
           />
         )}
+        <ExportButton entity="tickets" />
         <TicketDialog contacts={contacts} users={users} />
       </PageHeader>
 

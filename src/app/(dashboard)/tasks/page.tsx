@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { TasksViewSwitcher } from '@/components/tasks/tasks-view-switcher';
 import { TaskDialog } from '@/components/tasks/task-dialog';
 import { getTranslations } from 'next-intl/server';
@@ -33,6 +34,7 @@ export default async function TasksPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${tasks.length} tareas`}>
+        <ExportButton entity="tasks" />
         <TaskDialog users={users} contacts={contacts} deals={deals} />
       </PageHeader>
 

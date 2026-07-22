@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { Building2 } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { CompaniesTable } from '@/components/companies/companies-table';
@@ -21,6 +22,7 @@ export default async function CompaniesPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${companies.length} empresas`}>
+        <ExportButton entity="companies" />
         <CompanyDialog />
       </PageHeader>
 

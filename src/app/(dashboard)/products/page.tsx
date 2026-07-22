@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/dashboard/page-header';
+import { ExportButton } from '@/components/export-button';
 import { Package } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { ProductsTable } from '@/components/products/products-table';
@@ -20,6 +21,7 @@ export default async function ProductsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t('title')} description={`${products.length} productos`}>
+        <ExportButton entity="products" />
         <ProductDialog />
       </PageHeader>
 
