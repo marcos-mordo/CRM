@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ContactTimeline } from '@/components/contacts/contact-timeline';
 import { AttachmentsPanel } from '@/components/attachments/attachments-panel';
 import { ComposeEmailButton } from '@/components/contacts/compose-email-button';
+import { LogActivityDialog } from '@/components/activities/log-activity-dialog';
 import { Mail, Phone, Building2, Briefcase, Edit, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -86,6 +87,7 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
             </a>
           </Button>
         )}
+        <LogActivityDialog contactId={id} />
         <Button asChild variant="default" size="sm">
           <Link href={`/contacts?edit=${id}`}><Edit className="h-4 w-4" /> Editar</Link>
         </Button>
