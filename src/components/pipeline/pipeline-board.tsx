@@ -15,7 +15,7 @@ import { DealDialog } from './deal-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { Contact, Company, Deal, Pipeline, Stage, User } from '@prisma/client';
 
-type DealRow = Deal & { contact: Contact | null; company: Company | null; owner: User | null };
+type DealRow = Deal & { contact: Contact | null; company: Company | null; owner: User | null; lineItems?: any[] };
 type StageRow = Stage & { deals: DealRow[] };
 type PipelineRow = Pipeline & { stages: StageRow[] };
 
@@ -24,6 +24,7 @@ interface Props {
   contacts: Contact[];
   companies: Company[];
   users: User[];
+  products?: any[];
   rottingDays?: number;
 }
 
@@ -34,7 +35,7 @@ function rotFor(lastActivityAt: Date | string, rottingDays: number): { state: 'f
   return { state: 'fresh', days };
 }
 
-export function PipelineBoard({ pipeline, contacts, companies, users, rottingDays = 14 }: Props) {
+export function PipelineBoard({ pipeline, contacts, companies, users, products = [], rottingDays = 14 }: Props) {
   const t = useTranslations('Pipeline');
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -209,6 +210,7 @@ export function PipelineBoard({ pipeline, contacts, companies, users, rottingDay
           contacts={contacts}
           companies={companies}
           users={users}
+          products={products}
           open={!!editing}
           onOpenChange={(o) => !o && setEditing(null)}
         />

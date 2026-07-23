@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Loader2, Activity } from 'lucide-react';
 import { LogActivityDialog } from '@/components/activities/log-activity-dialog';
+import { DealLineItems } from './deal-line-items';
 import { createDeal, updateDeal } from '@/app/(dashboard)/pipeline/actions';
 import type { Contact, Company, Deal, Stage, User } from '@prisma/client';
 
@@ -21,11 +22,12 @@ interface Props {
   contacts: Contact[];
   companies: Company[];
   users: User[];
+  products?: any[];
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }
 
-export function DealDialog({ deal, pipeline, contacts, companies, users, open, onOpenChange }: Props) {
+export function DealDialog({ deal, pipeline, contacts, companies, users, products = [], open, onOpenChange }: Props) {
   const t = useTranslations();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -130,6 +132,15 @@ export function DealDialog({ deal, pipeline, contacts, companies, users, open, o
               />
             </div>
           </div>
+
+          {deal && (
+            <DealLineItems
+              dealId={deal.id}
+              currency={form.currency}
+              products={products}
+              lines={(deal as any).lineItems ?? []}
+            />
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
