@@ -69,6 +69,7 @@ export async function toggleTaskStatus(id: string) {
   });
   revalidatePath('/tasks');
   revalidatePath('/dashboard');
+  revalidatePath('/my-day');
   return { ok: true };
 }
 
