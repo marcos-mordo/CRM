@@ -406,6 +406,7 @@ model Deal {
   tasks      Task[]
   quotes     Quote[]
   attachments Attachment[]
+  lineItems  DealLineItem[]
 
   @@index([organizationId])
   @@index([pipelineId])
@@ -525,9 +526,27 @@ model Product {
 
   quoteLines   QuoteLine[]
   invoiceLines InvoiceLine[]
+  dealLineItems DealLineItem[]
 
   @@unique([organizationId, sku])
   @@index([organizationId])
+}
+
+model DealLineItem {
+  id          String   @id @default(cuid())
+  description String
+  quantity    Decimal  @default(1) @db.Decimal(15, 2)
+  unitPrice   Decimal  @db.Decimal(15, 2)
+  discount    Decimal  @default(0) @db.Decimal(5, 2) // % de descuento sobre la línea
+  total       Decimal  @db.Decimal(15, 2)
+  createdAt   DateTime @default(now())
+
+  dealId    String
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+
+  @@index([dealId])
 }
 
 enum QuoteStatus {

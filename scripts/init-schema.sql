@@ -353,6 +353,21 @@ CREATE TABLE "Product" (
 );
 
 -- CreateTable
+CREATE TABLE "DealLineItem" (
+    "id" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "quantity" DECIMAL(15,2) NOT NULL DEFAULT 1,
+    "unitPrice" DECIMAL(15,2) NOT NULL,
+    "discount" DECIMAL(5,2) NOT NULL DEFAULT 0,
+    "total" DECIMAL(15,2) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "dealId" TEXT NOT NULL,
+    "productId" TEXT,
+
+    CONSTRAINT "DealLineItem_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Quote" (
     "id" TEXT NOT NULL,
     "number" TEXT NOT NULL,
@@ -1463,6 +1478,9 @@ CREATE INDEX "Product_organizationId_idx" ON "Product"("organizationId");
 CREATE UNIQUE INDEX "Product_organizationId_sku_key" ON "Product"("organizationId", "sku");
 
 -- CreateIndex
+CREATE INDEX "DealLineItem_dealId_idx" ON "DealLineItem"("dealId");
+
+-- CreateIndex
 CREATE INDEX "Quote_organizationId_idx" ON "Quote"("organizationId");
 
 -- CreateIndex
@@ -1890,6 +1908,12 @@ ALTER TABLE "Task" ADD CONSTRAINT "Task_dealId_fkey" FOREIGN KEY ("dealId") REFE
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DealLineItem" ADD CONSTRAINT "DealLineItem_dealId_fkey" FOREIGN KEY ("dealId") REFERENCES "Deal"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DealLineItem" ADD CONSTRAINT "DealLineItem_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Quote" ADD CONSTRAINT "Quote_organizationId_fkey" FOREIGN KEY ("organizationId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
