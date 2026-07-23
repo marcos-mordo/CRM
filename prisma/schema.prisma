@@ -476,6 +476,7 @@ model Task {
   status      TaskStatus   @default(PENDING)
   dueDate     DateTime?
   completedAt DateTime?
+  reminderSentAt DateTime? // recordatorio de vencimiento ya enviado
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -1734,6 +1735,7 @@ enum NotificationType {
   COMMISSION_PAID    // Para reps: su comisión fue pagada
   COMMISSION_APPROVED // Para reps: su comisión fue aprobada
   TASK_ASSIGNED
+  TASK_DUE           // recordatorio: una tarea vence hoy o está vencida
   MENTION
   SYSTEM
 }
