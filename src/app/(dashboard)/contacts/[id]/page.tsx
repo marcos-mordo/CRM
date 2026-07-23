@@ -8,6 +8,8 @@ import { ContactTimeline } from '@/components/contacts/contact-timeline';
 import { AttachmentsPanel } from '@/components/attachments/attachments-panel';
 import { ComposeEmailButton } from '@/components/contacts/compose-email-button';
 import { LogActivityDialog } from '@/components/activities/log-activity-dialog';
+import { CustomFieldsCard } from '@/components/custom-fields/custom-fields-card';
+import { getCustomFieldsWithValues } from '@/lib/custom-fields';
 import { Mail, Phone, Building2, Briefcase, Edit, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 
@@ -64,6 +66,8 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
     }),
     prisma.emailAccount.findUnique({ where: { userId: session.user.id }, select: { id: true } }),
   ]);
+
+  const customFields = await getCustomFieldsWithValues('CONTACT', id, session.user.organizationId);
 
   return (
     <div className="space-y-6">
@@ -138,6 +142,11 @@ export default async function ContactDetailPage({ params }: { params: Promise<{ 
               {contact.owner?.name ?? '—'}
             </CardContent>
           </Card>
+
+          <CustomFieldsCard entity="CONTACT" entityId={id} items={customFields.map((it) => ({
+            field: { id: it.field.id, key: it.field.key, label: it.field.label, type: it.field.type, options: it.field.options, required: it.field.required, helpText: it.field.helpText },
+            value: it.value,
+          }))} />
 
           <AttachmentsPanel entity="contact" entityId={id} initial={attachments} />
 
