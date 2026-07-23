@@ -61,6 +61,9 @@ export default async function SettingsPage() {
           <TabsTrigger value="email" asChild>
             <Link href="/settings/email">Email</Link>
           </TabsTrigger>
+          <TabsTrigger value="custom-fields" asChild>
+            <Link href="/settings/custom-fields">Campos</Link>
+          </TabsTrigger>
           <TabsTrigger value="billing" asChild>
             <Link href="/settings/billing">Billing</Link>
           </TabsTrigger>
