@@ -34,6 +34,7 @@ import {
   TrendingUp,
   Upload,
   Activity,
+  Sun,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -56,6 +57,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
       label: 'CRM',
       items: [
         { href: '/dashboard', icon: LayoutDashboard, labelKey: 'dashboard' },
+        { href: '/my-day', icon: Sun, labelKey: 'myDay' },
         { href: '/me', icon: Trophy, labelKey: 'myDashboard' },
         { href: '/goals', icon: Trophy, labelKey: 'goals' },
         { href: '/contacts', icon: Users, labelKey: 'contacts' },
