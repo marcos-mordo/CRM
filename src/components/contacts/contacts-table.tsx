@@ -11,6 +11,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ColumnsMenu } from '@/components/ui/columns-menu';
+import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { ContactForm } from './contact-form';
 import { Edit, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { initials, formatDate } from '@/lib/utils';
@@ -33,6 +35,34 @@ export function ContactsTable({
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Contact | null>(null);
   const [, startTransition] = useTransition();
+
+  // Definición de columnas: etiqueta + cómo se renderiza cada celda.
+  const COLUMNS: { key: string; label: string; cell: (c: ContactRow) => React.ReactNode; className?: string }[] = [
+    {
+      key: 'name', label: t('Common.name'),
+      cell: (c) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-xs bg-primary/10 text-primary">{initials(`${c.firstName} ${c.lastName}`)}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium">{c.firstName} {c.lastName}</p>
+            {c.jobTitle && <p className="text-xs text-muted-foreground">{c.jobTitle}</p>}
+          </div>
+        </div>
+      ),
+    },
+    { key: 'company', label: t('Contacts.company'), cell: (c) => c.company ? <Badge variant="secondary">{c.company.name}</Badge> : <span className="text-muted-foreground text-sm">—</span> },
+    { key: 'email', label: t('Common.email'), cell: (c) => <span className="text-sm">{c.email || '—'}</span> },
+    { key: 'phone', label: t('Common.phone'), cell: (c) => <span className="text-sm">{c.phone || '—'}</span> },
+    { key: 'mobile', label: 'Móvil', cell: (c) => <span className="text-sm">{c.mobile || '—'}</span> },
+    { key: 'city', label: 'Ciudad', cell: (c) => <span className="text-sm">{c.city || '—'}</span> },
+    { key: 'owner', label: t('Common.owner'), cell: (c) => <span className="text-sm">{c.owner?.name || '—'}</span> },
+    { key: 'date', label: t('Common.date'), cell: (c) => <span className="text-sm text-muted-foreground">{formatDate(c.updatedAt)}</span> },
+  ];
+  const allKeys = COLUMNS.map((c) => c.key);
+  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.contacts.v1', allKeys);
+  const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
     if (!search) return contacts;
@@ -62,8 +92,8 @@ export function ContactsTable({
 
   return (
     <>
-      <div className="p-4 border-b">
-        <div className="relative max-w-sm">
+      <div className="p-4 border-b flex items-center justify-between gap-3">
+        <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder={t('Common.search') + '...'}
@@ -72,50 +102,27 @@ export function ContactsTable({
             className="pl-9"
           />
         </div>
+        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} />
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('Common.name')}</TableHead>
-            <TableHead>{t('Contacts.company')}</TableHead>
-            <TableHead>{t('Common.email')}</TableHead>
-            <TableHead>{t('Common.phone')}</TableHead>
-            <TableHead>{t('Common.owner')}</TableHead>
-            <TableHead>{t('Common.date')}</TableHead>
+            {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+              <TableCell colSpan={cols.length + 1} className="text-center py-12 text-muted-foreground">
                 {t('Common.noData')}
               </TableCell>
             </TableRow>
           ) : (
             filtered.map((c) => (
               <TableRow key={c.id} className="cursor-pointer" onClick={() => setEditing(c)}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                        {initials(`${c.firstName} ${c.lastName}`)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{c.firstName} {c.lastName}</p>
-                      {c.jobTitle && <p className="text-xs text-muted-foreground">{c.jobTitle}</p>}
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {c.company ? <Badge variant="secondary">{c.company.name}</Badge> : <span className="text-muted-foreground text-sm">—</span>}
-                </TableCell>
-                <TableCell className="text-sm">{c.email || '—'}</TableCell>
-                <TableCell className="text-sm">{c.phone || '—'}</TableCell>
-                <TableCell className="text-sm">{c.owner?.name || '—'}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{formatDate(c.updatedAt)}</TableCell>
+                {cols.map((col) => <TableCell key={col.key}>{col.cell(c)}</TableCell>)}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
