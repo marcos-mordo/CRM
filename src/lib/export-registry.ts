@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
-import type { Column } from './xlsx';
+import type { Column, CellType } from './xlsx';
+import type { CustomFieldEntity } from '@prisma/client';
 
 /**
  * Registro universal de exportación. Cada entidad define su consulta (siempre
@@ -254,4 +255,60 @@ export const EXPORTS: Record<string, ExportDef> = {
 
 export function exportKeys(): string[] {
   return Object.keys(EXPORTS);
+}
+
+// Mapea la clave de exportación → entidad de campos personalizados
+const CF_ENTITY: Record<string, CustomFieldEntity> = {
+  contacts: 'CONTACT',
+  companies: 'COMPANY',
+  deals: 'DEAL',
+  leads: 'LEAD',
+  'end-customers': 'CUSTOMER',
+  products: 'PRODUCT',
+};
+
+/**
+ * Columnas dinámicas para los campos personalizados definidos por la org en
+ * esa entidad. Se anexan al final del export (Excel y CSV). Devuelve [] si la
+ * entidad no admite campos personalizados o no hay ninguno definido.
+ */
+export async function customFieldColumns(organizationId: string, exportKey: string): Promise<Column<any>[]> {
+  const cfEntity = CF_ENTITY[exportKey];
+  if (!cfEntity) return [];
+
+  const fields = await prisma.customField.findMany({
+    where: { organizationId, entity: cfEntity, active: true },
+    orderBy: { order: 'asc' },
+    select: { id: true, label: true, type: true },
+  });
+  if (fields.length === 0) return [];
+
+  const values = await prisma.customFieldValue.findMany({
+    where: { organizationId, entity: cfEntity },
+    select: { entityId: true, fieldId: true, value: true },
+  });
+  const byRow = new Map<string, Record<string, string>>();
+  for (const v of values) {
+    let m = byRow.get(v.entityId);
+    if (!m) { m = {}; byRow.set(v.entityId, m); }
+    m[v.fieldId] = v.value ?? '';
+  }
+
+  return fields.map((f) => {
+    const type: CellType = f.type === 'NUMBER' || f.type === 'DECIMAL' ? 'number' : f.type === 'DATE' ? 'date' : 'text';
+    return {
+      key: `cf_${f.id}`,
+      label: f.label,
+      type,
+      get: (row: any) => {
+        const raw = byRow.get(row.id)?.[f.id];
+        if (raw == null || raw === '') return '';
+        // MULTISELECT se guarda como JSON array → lo mostramos legible
+        if (raw.startsWith('[')) {
+          try { const arr = JSON.parse(raw); if (Array.isArray(arr)) return arr.join(', '); } catch { /* raw */ }
+        }
+        return raw;
+      },
+    };
+  });
 }

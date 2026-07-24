@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth-helpers';
-import { EXPORTS } from '@/lib/export-registry';
+import { EXPORTS, customFieldColumns } from '@/lib/export-registry';
 import { buildWorkbook, xlsxHeaders, type Column } from '@/lib/xlsx';
 
 export const dynamic = 'force-dynamic';
@@ -12,12 +12,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ enti
   if (!def) return NextResponse.json({ error: 'unknown_entity' }, { status: 404 });
 
   const format = (new URL(req.url).searchParams.get('format') ?? 'xlsx').toLowerCase();
-  const rows = await def.fetch(session.user.organizationId);
+  const [rows, cfCols] = await Promise.all([
+    def.fetch(session.user.organizationId),
+    customFieldColumns(session.user.organizationId, entity),
+  ]);
+  const columns = [...def.columns, ...cfCols]; // campos personalizados al final
   const today = new Date().toISOString().slice(0, 10);
   const filename = `${entity}-${today}`;
 
   if (format === 'csv') {
-    const csv = toCsv(rows, def.columns);
+    const csv = toCsv(rows, columns);
     return new NextResponse('﻿' + csv, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
@@ -27,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ enti
     });
   }
 
-  const buffer = await buildWorkbook([{ name: def.label, columns: def.columns, rows }]);
+  const buffer = await buildWorkbook([{ name: def.label, columns, rows }]);
   return new NextResponse(new Uint8Array(buffer), { headers: xlsxHeaders(filename) });
 }
 
