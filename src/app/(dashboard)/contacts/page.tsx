@@ -16,7 +16,7 @@ export default async function ContactsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Contacts');
 
-  const [contacts, companies, users, customFields] = await Promise.all([
+  const [contacts, companies, users, customFields, tags] = await Promise.all([
     prisma.contact.findMany({
       where: { organizationId: session.user.organizationId },
       include: { company: true, owner: true },
@@ -31,6 +31,11 @@ export default async function ContactsPage() {
       orderBy: { name: 'asc' },
     }),
     getCustomFieldTableData(session.user.organizationId, 'CONTACT'),
+    prisma.tag.findMany({
+      where: { organizationId: session.user.organizationId },
+      select: { id: true, name: true, color: true },
+      orderBy: { name: 'asc' },
+    }),
   ]);
 
   return (
@@ -51,7 +56,7 @@ export default async function ContactsPage() {
             action={<NewContactButton companies={companies} users={users} />}
           />
         ) : (
-          <ContactsTable contacts={contacts} companies={companies} users={users} customFields={customFields} />
+          <ContactsTable contacts={contacts} companies={companies} users={users} customFields={customFields} tags={tags} />
         )}
       </Card>
     </div>

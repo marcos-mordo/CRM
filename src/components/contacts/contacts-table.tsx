@@ -12,8 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { ContactForm } from './contact-form';
+import { BulkContactsBar } from './bulk-contacts-bar';
 import { Edit, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { initials, formatDate } from '@/lib/utils';
 import { deleteContact } from '@/app/(dashboard)/contacts/actions';
@@ -25,18 +27,23 @@ export function ContactsTable({
   contacts,
   companies,
   users,
+  tags = [],
   customFields = { fields: [], valuesByRow: {} },
 }: {
   contacts: ContactRow[];
   companies: Company[];
   users: User[];
+  tags?: { id: string; name: string; color?: string }[];
   customFields?: { fields: { key: string; label: string }[]; valuesByRow: Record<string, Record<string, string>> };
 }) {
   const t = useTranslations();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Contact | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
+
+  const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   // Definición de columnas: etiqueta + cómo se renderiza cada celda.
   const COLUMNS: { key: string; label: string; cell: (c: ContactRow) => React.ReactNode; className?: string }[] = [
@@ -99,8 +106,19 @@ export function ContactsTable({
     });
   };
 
+  const allSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
+  const toggleAll = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allSelected) filtered.forEach((c) => n.delete(c.id));
+    else filtered.forEach((c) => n.add(c.id));
+    return n;
+  });
+
   return (
     <>
+      {selected.size > 0 && (
+        <BulkContactsBar ids={[...selected]} users={users} tags={tags} onClear={() => setSelected(new Set())} />
+      )}
       <div className="p-4 border-b flex items-center justify-between gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -117,6 +135,7 @@ export function ContactsTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10"><Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Seleccionar todo" /></TableHead>
             {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
             <TableHead className="w-12"></TableHead>
           </TableRow>
@@ -124,13 +143,16 @@ export function ContactsTable({
         <TableBody>
           {filtered.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={cols.length + 1} className="text-center py-12 text-muted-foreground">
+              <TableCell colSpan={cols.length + 2} className="text-center py-12 text-muted-foreground">
                 {t('Common.noData')}
               </TableCell>
             </TableRow>
           ) : (
             filtered.map((c) => (
-              <TableRow key={c.id} className="cursor-pointer" onClick={() => setEditing(c)}>
+              <TableRow key={c.id} className={`cursor-pointer ${selected.has(c.id) ? 'bg-primary/5' : ''}`} onClick={() => setEditing(c)}>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleRow(c.id)} aria-label="Seleccionar" />
+                </TableCell>
                 {cols.map((col) => <TableCell key={col.key}>{col.cell(c)}</TableCell>)}
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
