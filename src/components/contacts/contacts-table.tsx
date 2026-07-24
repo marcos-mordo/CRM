@@ -25,10 +25,12 @@ export function ContactsTable({
   contacts,
   companies,
   users,
+  customFields = { fields: [], valuesByRow: {} },
 }: {
   contacts: ContactRow[];
   companies: Company[];
   users: User[];
+  customFields?: { fields: { key: string; label: string }[]; valuesByRow: Record<string, Record<string, string>> };
 }) {
   const t = useTranslations();
   const router = useRouter();
@@ -59,10 +61,17 @@ export function ContactsTable({
     { key: 'city', label: 'Ciudad', cell: (c) => <span className="text-sm">{c.city || '—'}</span> },
     { key: 'owner', label: t('Common.owner'), cell: (c) => <span className="text-sm">{c.owner?.name || '—'}</span> },
     { key: 'date', label: t('Common.date'), cell: (c) => <span className="text-sm text-muted-foreground">{formatDate(c.updatedAt)}</span> },
+    // Campos personalizados (ocultos por defecto, disponibles en el menú)
+    ...customFields.fields.map((f) => ({
+      key: `cf_${f.key}`,
+      label: f.label,
+      cell: (c: ContactRow) => <span className="text-sm">{customFields.valuesByRow[c.id]?.[f.key] || '—'}</span>,
+    })),
   ];
+  const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.contacts.v1', allKeys);
-  const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
+  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.contacts.v1', allKeys, builtInKeys);
+  const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
     if (!search) return contacts;

@@ -28,7 +28,7 @@ const statusVariant: Record<LeadStatus, 'default' | 'secondary' | 'destructive' 
   CONVERTED: 'success',
 };
 
-export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
+export function LeadsTable({ leads, users, customFields = { fields: [], valuesByRow: {} } }: { leads: Row[]; users: User[]; customFields?: { fields: { key: string; label: string }[]; valuesByRow: Record<string, Record<string, string>> } }) {
   const t = useTranslations();
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -49,10 +49,16 @@ export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
     { key: 'value', label: t('Leads.estimatedValue'), cell: (l) => <span className="text-sm font-medium">{l.estimatedValue ? formatCurrency(Number(l.estimatedValue)) : '—'}</span> },
     { key: 'source', label: t('Leads.source'), cell: (l) => <span className="text-sm">{l.source || '—'}</span> },
     { key: 'owner', label: t('Common.owner'), cell: (l) => <span className="text-sm">{l.owner?.name || '—'}</span> },
+    ...customFields.fields.map((f) => ({
+      key: `cf_${f.key}`,
+      label: f.label,
+      cell: (l: Row) => <span className="text-sm">{customFields.valuesByRow[l.id]?.[f.key] || '—'}</span>,
+    })),
   ];
+  const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.leads.v1', allKeys);
-  const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
+  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.leads.v1', allKeys, builtInKeys);
+  const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {

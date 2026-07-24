@@ -6,6 +6,7 @@ import { ExportButton } from '@/components/export-button';
 import { Users, Merge } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { ContactsTable } from '@/components/contacts/contacts-table';
+import { getCustomFieldTableData } from '@/lib/custom-field-table';
 import { NewContactButton } from '@/components/contacts/new-contact-button';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,7 +16,7 @@ export default async function ContactsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Contacts');
 
-  const [contacts, companies, users] = await Promise.all([
+  const [contacts, companies, users, customFields] = await Promise.all([
     prisma.contact.findMany({
       where: { organizationId: session.user.organizationId },
       include: { company: true, owner: true },
@@ -29,6 +30,7 @@ export default async function ContactsPage() {
       where: { organizationId: session.user.organizationId, active: true },
       orderBy: { name: 'asc' },
     }),
+    getCustomFieldTableData(session.user.organizationId, 'CONTACT'),
   ]);
 
   return (
@@ -49,7 +51,7 @@ export default async function ContactsPage() {
             action={<NewContactButton companies={companies} users={users} />}
           />
         ) : (
-          <ContactsTable contacts={contacts} companies={companies} users={users} />
+          <ContactsTable contacts={contacts} companies={companies} users={users} customFields={customFields} />
         )}
       </Card>
     </div>

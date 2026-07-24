@@ -6,6 +6,7 @@ import { ExportButton } from '@/components/export-button';
 import { UserPlus } from 'lucide-react';
 import { EmptyState } from '@/components/dashboard/empty-state';
 import { LeadsTable } from '@/components/leads/leads-table';
+import { getCustomFieldTableData } from '@/lib/custom-field-table';
 import { LeadDialog } from '@/components/leads/lead-dialog';
 import { getTranslations } from 'next-intl/server';
 
@@ -13,7 +14,7 @@ export default async function LeadsPage() {
   const session = await requireAuth();
   const t = await getTranslations('Leads');
 
-  const [leads, users] = await Promise.all([
+  const [leads, users, customFields] = await Promise.all([
     prisma.lead.findMany({
       where: { organizationId: session.user.organizationId },
       include: { owner: true },
@@ -23,6 +24,7 @@ export default async function LeadsPage() {
       where: { organizationId: session.user.organizationId, active: true },
       orderBy: { name: 'asc' },
     }),
+    getCustomFieldTableData(session.user.organizationId, 'LEAD'),
   ]);
 
   return (
@@ -36,7 +38,7 @@ export default async function LeadsPage() {
         {leads.length === 0 ? (
           <EmptyState icon={UserPlus} title={t('new')} action={<LeadDialog users={users} />} />
         ) : (
-          <LeadsTable leads={leads} users={users} />
+          <LeadsTable leads={leads} users={users} customFields={customFields} />
         )}
       </Card>
     </div>

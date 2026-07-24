@@ -9,14 +9,18 @@ import { useEffect, useState } from 'react';
  *
  * `allKeys` es el orden canónico por defecto (todas visibles).
  */
-export function useColumnPrefs(storageKey: string, allKeys: string[]): {
+export function useColumnPrefs(storageKey: string, allKeys: string[], defaultVisible?: string[]): {
   visible: string[];
   hydrated: boolean;
   toggle: (key: string) => void;
   move: (key: string, dir: -1 | 1) => void;
   reset: () => void;
 } {
-  const [visible, setVisible] = useState<string[]>(allKeys);
+  // Columnas mostradas de inicio (por defecto todas). Sirve para tener
+  // columnas disponibles en el menú pero ocultas hasta que el usuario las active
+  // (p.ej. campos personalizados).
+  const initial = defaultVisible ?? allKeys;
+  const [visible, setVisible] = useState<string[]>(initial);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -58,7 +62,7 @@ export function useColumnPrefs(storageKey: string, allKeys: string[]): {
     persist(next);
   };
 
-  const reset = () => persist(allKeys);
+  const reset = () => persist(initial);
 
   return { visible, hydrated, toggle, move, reset };
 }

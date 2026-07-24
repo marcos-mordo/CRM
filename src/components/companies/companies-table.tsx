@@ -19,7 +19,7 @@ import type { Company } from '@prisma/client';
 
 type Row = Company & { _count: { contacts: number; deals: number } };
 
-export function CompaniesTable({ companies }: { companies: Row[] }) {
+export function CompaniesTable({ companies, customFields = { fields: [], valuesByRow: {} } }: { companies: Row[]; customFields?: { fields: { key: string; label: string }[]; valuesByRow: Record<string, Record<string, string>> } }) {
   const t = useTranslations();
   const router = useRouter();
   const [search, setSearch] = useState('');
@@ -46,10 +46,16 @@ export function CompaniesTable({ companies }: { companies: Row[] }) {
     { key: 'contacts', label: 'Contactos', cell: (c) => <Badge variant="secondary">{c._count.contacts}</Badge> },
     { key: 'deals', label: 'Oportunidades', cell: (c) => <Badge variant="secondary">{c._count.deals}</Badge> },
     { key: 'revenue', label: t('Companies.annualRevenue'), cell: (c) => <span className="text-sm">{c.annualRevenue ? formatCurrency(Number(c.annualRevenue)) : '—'}</span> },
+    ...customFields.fields.map((f) => ({
+      key: `cf_${f.key}`,
+      label: f.label,
+      cell: (c: Row) => <span className="text-sm">{customFields.valuesByRow[c.id]?.[f.key] || '—'}</span>,
+    })),
   ];
+  const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.companies.v1', allKeys);
-  const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
+  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.companies.v1', allKeys, builtInKeys);
+  const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
     if (!search) return companies;
