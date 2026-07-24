@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus } from 'lucide-react';
 import { createLead, updateLead } from '@/app/(dashboard)/leads/actions';
+import { CustomFieldsCardLazy } from '@/components/custom-fields/custom-fields-card-lazy';
 import type { Lead, User } from '@prisma/client';
 
 const statuses = ['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED'] as const;
@@ -162,6 +163,8 @@ export function LeadDialog({ lead, users, open: ctrlOpen, onOpenChange }: Props)
             <Label>Notas</Label>
             <Textarea rows={3} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
           </div>
+
+          {lead && <CustomFieldsCardLazy entity="LEAD" entityId={lead.id} />}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>{t('Common.cancel')}</Button>

@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Loader2, Activity } from 'lucide-react';
 import { LogActivityDialog } from '@/components/activities/log-activity-dialog';
 import { DealLineItems } from './deal-line-items';
+import { CustomFieldsCardLazy } from '@/components/custom-fields/custom-fields-card-lazy';
 import { createDeal, updateDeal } from '@/app/(dashboard)/pipeline/actions';
 import type { Contact, Company, Deal, Stage, User } from '@prisma/client';
 
@@ -210,6 +211,8 @@ export function DealDialog({ deal, pipeline, contacts, companies, users, product
             <Label>Descripción</Label>
             <Textarea rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} />
           </div>
+
+          {deal && <CustomFieldsCardLazy entity="DEAL" entityId={deal.id} />}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('Common.cancel')}</Button>
