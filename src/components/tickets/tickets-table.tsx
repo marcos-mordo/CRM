@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SlaBadge } from '@/components/tickets/sla-badge';
+import { ColumnsMenu } from '@/components/ui/columns-menu';
+import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MessageSquare, MoreHorizontal, Search, Trash2 } from 'lucide-react';
@@ -69,6 +71,36 @@ export function TicketsTable({ tickets, users, sla = {} }: { tickets: Row[]; use
     });
   };
 
+  const COLUMNS: { key: string; label: string; cell: (tk: Row) => React.ReactNode }[] = [
+    { key: 'number', label: '#', cell: (tk) => <span className="font-mono text-sm">#{tk.number}</span> },
+    { key: 'subject', label: t('Tickets.subject'), cell: (tk) => (
+      <>
+        <Link href={`/tickets/${tk.id}`} className="font-medium hover:underline">{tk.subject}</Link>
+        {tk._count.comments > 0 && <Badge variant="outline" className="ml-2 gap-1"><MessageSquare className="h-3 w-3" />{tk._count.comments}</Badge>}
+        {sla[tk.id] && <span className="ml-2 inline-block"><SlaBadge sla={sla[tk.id]} /></span>}
+      </>
+    ) },
+    { key: 'customer', label: 'Cliente', cell: (tk) => <span className="text-sm">{tk.contact ? `${tk.contact.firstName} ${tk.contact.lastName}` : '—'}</span> },
+    { key: 'priority', label: 'Prioridad', cell: (tk) => <Badge className={`border-transparent text-xs ${priorityVariant[tk.priority]}`}>{t(`Tickets.priorities.${tk.priority}` as any)}</Badge> },
+    { key: 'status', label: 'Estado', cell: (tk) => (
+      <Select value={tk.status} onValueChange={(v) => update(tk.id, { status: v })}>
+        <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="OPEN">{t('Tickets.status.OPEN')}</SelectItem>
+          <SelectItem value="IN_PROGRESS">{t('Tickets.status.IN_PROGRESS')}</SelectItem>
+          <SelectItem value="WAITING">{t('Tickets.status.WAITING')}</SelectItem>
+          <SelectItem value="RESOLVED">{t('Tickets.status.RESOLVED')}</SelectItem>
+          <SelectItem value="CLOSED">{t('Tickets.status.CLOSED')}</SelectItem>
+        </SelectContent>
+      </Select>
+    ) },
+    { key: 'agent', label: t('Tickets.agent'), cell: (tk) => <span className="text-sm">{tk.agent?.name || '—'}</span> },
+    { key: 'date', label: t('Common.date'), cell: (tk) => <span className="text-sm text-muted-foreground">{formatDate(tk.createdAt)}</span> },
+  ];
+  const allKeys = COLUMNS.map((c) => c.key);
+  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.tickets.v1', allKeys);
+  const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
+
   return (
     <>
       <div className="p-4 border-b flex items-center gap-3 flex-wrap">
@@ -83,61 +115,20 @@ export function TicketsTable({ tickets, users, sla = {} }: { tickets: Row[]; use
             </Button>
           ))}
         </div>
+        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} />
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>#</TableHead>
-            <TableHead>{t('Tickets.subject')}</TableHead>
-            <TableHead>Cliente</TableHead>
-            <TableHead>Prioridad</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>{t('Tickets.agent')}</TableHead>
-            <TableHead>{t('Common.date')}</TableHead>
+            {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((tk) => (
             <TableRow key={tk.id}>
-              <TableCell className="font-mono text-sm">#{tk.number}</TableCell>
-              <TableCell>
-                <Link href={`/tickets/${tk.id}`} className="font-medium hover:underline">
-                  {tk.subject}
-                </Link>
-                {tk._count.comments > 0 && (
-                  <Badge variant="outline" className="ml-2 gap-1">
-                    <MessageSquare className="h-3 w-3" />
-                    {tk._count.comments}
-                  </Badge>
-                )}
-                {sla[tk.id] && <span className="ml-2 inline-block"><SlaBadge sla={sla[tk.id]} /></span>}
-              </TableCell>
-              <TableCell className="text-sm">
-                {tk.contact ? `${tk.contact.firstName} ${tk.contact.lastName}` : '—'}
-              </TableCell>
-              <TableCell>
-                <Badge className={`border-transparent text-xs ${priorityVariant[tk.priority]}`}>
-                  {t(`Tickets.priorities.${tk.priority}` as any)}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Select value={tk.status} onValueChange={(v) => update(tk.id, { status: v })}>
-                  <SelectTrigger className="h-7 w-32 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OPEN">{t('Tickets.status.OPEN')}</SelectItem>
-                    <SelectItem value="IN_PROGRESS">{t('Tickets.status.IN_PROGRESS')}</SelectItem>
-                    <SelectItem value="WAITING">{t('Tickets.status.WAITING')}</SelectItem>
-                    <SelectItem value="RESOLVED">{t('Tickets.status.RESOLVED')}</SelectItem>
-                    <SelectItem value="CLOSED">{t('Tickets.status.CLOSED')}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </TableCell>
-              <TableCell className="text-sm">{tk.agent?.name || '—'}</TableCell>
-              <TableCell className="text-sm text-muted-foreground">{formatDate(tk.createdAt)}</TableCell>
+              {cols.map((col) => <TableCell key={col.key}>{col.cell(tk)}</TableCell>)}
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
