@@ -1,10 +1,23 @@
 'use server';
 
 import { requireAuth } from '@/lib/auth-helpers';
-import { saveCustomFieldValues } from '@/lib/custom-fields';
+import { saveCustomFieldValues, getCustomFieldsWithValues } from '@/lib/custom-fields';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { CustomFieldEntity } from '@prisma/client';
+
+/** Carga (bajo demanda) los campos personalizados + valores de una entidad. */
+export async function loadEntityCustomFields(entity: CustomFieldEntity, entityId: string) {
+  const session = await requireAuth();
+  const items = await getCustomFieldsWithValues(entity, entityId, session.user.organizationId);
+  return items.map((it) => ({
+    field: {
+      id: it.field.id, key: it.field.key, label: it.field.label, type: it.field.type,
+      options: it.field.options, required: it.field.required, helpText: it.field.helpText,
+    },
+    value: it.value,
+  }));
+}
 
 /**
  * Guarda los valores de campos personalizados de una entidad concreta.
@@ -30,5 +43,7 @@ export async function saveEntityCustomFields(entity: CustomFieldEntity, entityId
 
   if (entity === 'CONTACT') revalidatePath(`/contacts/${entityId}`);
   if (entity === 'DEAL') revalidatePath('/pipeline');
+  if (entity === 'COMPANY') revalidatePath('/companies');
+  if (entity === 'LEAD') revalidatePath('/leads');
   return { ok: true };
 }

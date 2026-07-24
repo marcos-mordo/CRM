@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Loader2, Plus } from 'lucide-react';
 import { createCompany, updateCompany } from '@/app/(dashboard)/companies/actions';
+import { CustomFieldsCardLazy } from '@/components/custom-fields/custom-fields-card-lazy';
 import type { Company } from '@prisma/client';
 
 interface CompanyDialogProps {
@@ -142,6 +143,8 @@ export function CompanyDialog({ company, trigger, open: ctrlOpen, onOpenChange }
             <Label htmlFor="notes">Notas</Label>
             <Textarea id="notes" rows={3} value={form.notes} onChange={(e) => set('notes', e.target.value)} />
           </div>
+
+          {company && <CustomFieldsCardLazy entity="COMPANY" entityId={company.id} />}
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
