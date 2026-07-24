@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { LeadDialog } from './lead-dialog';
+import { ColumnsMenu } from '@/components/ui/columns-menu';
+import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { ArrowRightCircle, Edit, MoreHorizontal, Search, Sparkles, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { convertLead, deleteLead } from '@/app/(dashboard)/leads/actions';
@@ -33,6 +35,24 @@ export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [editing, setEditing] = useState<Lead | null>(null);
   const [, startTransition] = useTransition();
+
+  const COLUMNS: { key: string; label: string; cell: (l: Row) => React.ReactNode }[] = [
+    { key: 'name', label: t('Common.name'), cell: (l) => (<><p className="font-medium">{l.firstName} {l.lastName}</p>{l.email && <p className="text-xs text-muted-foreground">{l.email}</p>}</>) },
+    { key: 'company', label: t('Contacts.company'), cell: (l) => (<><p className="text-sm">{l.company || '—'}</p>{l.jobTitle && <p className="text-xs text-muted-foreground">{l.jobTitle}</p>}</>) },
+    { key: 'status', label: t('Common.status'), cell: (l) => <Badge variant={statusVariant[l.status]}>{t(`Leads.status.${l.status}` as any)}</Badge> },
+    { key: 'score', label: t('Leads.score'), cell: (l) => (
+      <div className="flex items-center gap-2">
+        <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden"><div className="h-full bg-primary" style={{ width: `${l.score}%` }} /></div>
+        <span className="text-xs font-medium">{l.score}</span>
+      </div>
+    ) },
+    { key: 'value', label: t('Leads.estimatedValue'), cell: (l) => <span className="text-sm font-medium">{l.estimatedValue ? formatCurrency(Number(l.estimatedValue)) : '—'}</span> },
+    { key: 'source', label: t('Leads.source'), cell: (l) => <span className="text-sm">{l.source || '—'}</span> },
+    { key: 'owner', label: t('Common.owner'), cell: (l) => <span className="text-sm">{l.owner?.name || '—'}</span> },
+  ];
+  const allKeys = COLUMNS.map((c) => c.key);
+  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.leads.v1', allKeys);
+  const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {
@@ -121,48 +141,20 @@ export function LeadsTable({ leads, users }: { leads: Row[]; users: User[] }) {
         <Button size="sm" variant="outline" onClick={handleScoreAll} className="text-purple-600 border-purple-300">
           <Sparkles className="h-3.5 w-3.5" /> Puntuar con AI
         </Button>
+        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} />
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>{t('Common.name')}</TableHead>
-            <TableHead>{t('Contacts.company')}</TableHead>
-            <TableHead>{t('Common.status')}</TableHead>
-            <TableHead>{t('Leads.score')}</TableHead>
-            <TableHead>{t('Leads.estimatedValue')}</TableHead>
-            <TableHead>{t('Leads.source')}</TableHead>
-            <TableHead>{t('Common.owner')}</TableHead>
+            {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((l) => (
             <TableRow key={l.id} className="cursor-pointer" onClick={() => setEditing(l)}>
-              <TableCell>
-                <p className="font-medium">{l.firstName} {l.lastName}</p>
-                {l.email && <p className="text-xs text-muted-foreground">{l.email}</p>}
-              </TableCell>
-              <TableCell className="text-sm">
-                <p>{l.company || '—'}</p>
-                {l.jobTitle && <p className="text-xs text-muted-foreground">{l.jobTitle}</p>}
-              </TableCell>
-              <TableCell>
-                <Badge variant={statusVariant[l.status]}>{t(`Leads.status.${l.status}` as any)}</Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 rounded-full bg-secondary overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${l.score}%` }} />
-                  </div>
-                  <span className="text-xs font-medium">{l.score}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-sm font-medium">
-                {l.estimatedValue ? formatCurrency(Number(l.estimatedValue)) : '—'}
-              </TableCell>
-              <TableCell className="text-sm">{l.source || '—'}</TableCell>
-              <TableCell className="text-sm">{l.owner?.name || '—'}</TableCell>
+              {cols.map((col) => <TableCell key={col.key}>{col.cell(l)}</TableCell>)}
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
