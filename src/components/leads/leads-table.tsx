@@ -13,6 +13,7 @@ import { LeadDialog } from './lead-dialog';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { FilteredExportButton } from '@/components/filtered-export-button';
 import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { BulkLeadsBar } from './bulk-leads-bar';
@@ -190,6 +191,9 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
         <Button size="sm" variant="outline" onClick={handleScoreAll} className="text-purple-600 border-purple-300">
           <Sparkles className="h-3.5 w-3.5" /> Puntuar con AI
         </Button>
+        {filtered.length !== leads.length && filtered.length > 0 && (
+          <FilteredExportButton entity="leads" ids={filtered.map((l) => l.id)} count={filtered.length} />
+        )}
         <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
       </div>
 

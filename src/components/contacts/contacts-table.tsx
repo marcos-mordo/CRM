@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FilterBar } from '@/components/ui/filter-bar';
+import { FilteredExportButton } from '@/components/filtered-export-button';
 import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { ContactForm } from './contact-form';
@@ -156,6 +157,9 @@ export function ContactsTable({
             className="pl-9"
           />
         </div>
+        {filtered.length !== contacts.length && filtered.length > 0 && (
+          <FilteredExportButton entity="contacts" ids={filtered.map((c) => c.id)} count={filtered.length} />
+        )}
         <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
       </div>
 

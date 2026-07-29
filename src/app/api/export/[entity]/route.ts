@@ -6,16 +6,32 @@ import { buildWorkbook, xlsxHeaders, type Column } from '@/lib/xlsx';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ entity: string }> }) {
-  const session = await requireAuth();
   const { entity } = await params;
+  const format = (new URL(req.url).searchParams.get('format') ?? 'xlsx').toLowerCase();
+  return buildExport(entity, format, null);
+}
+
+// POST con { ids?: string[], format?: string } — exporta solo esos registros
+// (p.ej. lo que el usuario tiene filtrado en pantalla).
+export async function POST(req: NextRequest, { params }: { params: Promise<{ entity: string }> }) {
+  const { entity } = await params;
+  let body: { ids?: string[]; format?: string } = {};
+  try { body = await req.json(); } catch { /* body vacío */ }
+  const format = (new URL(req.url).searchParams.get('format') ?? body.format ?? 'xlsx').toLowerCase();
+  const ids = Array.isArray(body.ids) ? new Set(body.ids) : null;
+  return buildExport(entity, format, ids);
+}
+
+async function buildExport(entity: string, format: string, ids: Set<string> | null) {
+  const session = await requireAuth();
   const def = EXPORTS[entity];
   if (!def) return NextResponse.json({ error: 'unknown_entity' }, { status: 404 });
 
-  const format = (new URL(req.url).searchParams.get('format') ?? 'xlsx').toLowerCase();
-  const [rows, cfCols] = await Promise.all([
+  const [allRows, cfCols] = await Promise.all([
     def.fetch(session.user.organizationId),
     customFieldColumns(session.user.organizationId, entity),
   ]);
+  const rows = ids ? allRows.filter((r: any) => ids.has(r.id)) : allRows;
   const columns = [...def.columns, ...cfCols]; // campos personalizados al final
   const today = new Date().toISOString().slice(0, 10);
   const filename = `${entity}-${today}`;
