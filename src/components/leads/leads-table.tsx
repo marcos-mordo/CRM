@@ -14,6 +14,9 @@ import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FilteredExportButton } from '@/components/filtered-export-button';
+import { SortableHead } from '@/components/ui/sortable-head';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { sortRows } from '@/lib/sort-rows';
 import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { BulkLeadsBar } from './bulk-leads-bar';
@@ -65,6 +68,15 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   const filterTypes: Record<string, FilterType> = {
     score: 'number', estimatedValue: 'number', source: 'text', owner: 'select', createdAt: 'date',
     ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, 'text' as FilterType])),
+  };
+
+  // Ordenación por columna
+  const { sortKey, sortDir, toggle: toggleSort } = useTableSort();
+  const sortAccessors: Record<string, (l: Row) => any> = {
+    name: (l) => `${l.firstName} ${l.lastName}`, company: (l) => l.company, status: (l) => l.status,
+    score: (l) => l.score, value: (l) => (l.estimatedValue != null ? Number(l.estimatedValue) : null),
+    source: (l) => l.source, owner: (l) => l.owner?.name,
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, (l: Row) => customFields.valuesByRow[l.id]?.[f.key]])),
   };
 
   const COLUMNS: { key: string; label: string; cell: (l: Row) => React.ReactNode }[] = [
@@ -160,6 +172,8 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
     });
   };
 
+  const sorted = useMemo(() => sortRows(filtered, sortKey ? sortAccessors[sortKey] : undefined, sortDir), [filtered, sortKey, sortDir]);
+
   const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
   const toggleAll = () => setSelected((s) => {
     const n = new Set(s);
@@ -205,12 +219,16 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
         <TableHeader>
           <TableRow>
             <TableHead className="w-10"><Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Seleccionar todo" /></TableHead>
-            {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
+            {cols.map((c) => (
+              <TableHead key={c.key}>
+                <SortableHead label={c.label} active={sortKey === c.key} dir={sortDir} sortable={!!sortAccessors[c.key]} onToggle={() => toggleSort(c.key)} />
+              </TableHead>
+            ))}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filtered.map((l) => (
+          {sorted.map((l) => (
             <TableRow key={l.id} className={`cursor-pointer ${selected.has(l.id) ? 'bg-primary/5' : ''}`} onClick={() => setEditing(l)}>
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggleRow(l.id)} aria-label="Seleccionar" />

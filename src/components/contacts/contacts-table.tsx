@@ -15,6 +15,9 @@ import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FilterBar } from '@/components/ui/filter-bar';
 import { FilteredExportButton } from '@/components/filtered-export-button';
+import { SortableHead } from '@/components/ui/sortable-head';
+import { useTableSort } from '@/hooks/use-table-sort';
+import { sortRows } from '@/lib/sort-rows';
 import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { ContactForm } from './contact-form';
@@ -68,6 +71,15 @@ export function ContactsTable({
   const filterTypes: Record<string, FilterType> = {
     owner: 'select', company: 'select', city: 'text', country: 'text', jobTitle: 'text', source: 'text', createdAt: 'date',
     ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, 'text' as FilterType])),
+  };
+
+  // Ordenación por columna
+  const { sortKey, sortDir, toggle: toggleSort } = useTableSort();
+  const sortAccessors: Record<string, (c: ContactRow) => any> = {
+    name: (c) => `${c.firstName} ${c.lastName}`, company: (c) => c.company?.name, email: (c) => c.email,
+    phone: (c) => c.phone, mobile: (c) => c.mobile, city: (c) => c.city, owner: (c) => c.owner?.name,
+    date: (c) => new Date(c.updatedAt).getTime(),
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, (c: ContactRow) => customFields.valuesByRow[c.id]?.[f.key]])),
   };
 
   // Definición de columnas: etiqueta + cómo se renderiza cada celda.
@@ -134,6 +146,8 @@ export function ContactsTable({
     });
   };
 
+  const sorted = useMemo(() => sortRows(filtered, sortKey ? sortAccessors[sortKey] : undefined, sortDir), [filtered, sortKey, sortDir]);
+
   const allSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
   const toggleAll = () => setSelected((s) => {
     const n = new Set(s);
@@ -171,19 +185,23 @@ export function ContactsTable({
         <TableHeader>
           <TableRow>
             <TableHead className="w-10"><Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Seleccionar todo" /></TableHead>
-            {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
+            {cols.map((c) => (
+              <TableHead key={c.key}>
+                <SortableHead label={c.label} active={sortKey === c.key} dir={sortDir} sortable={!!sortAccessors[c.key]} onToggle={() => toggleSort(c.key)} />
+              </TableHead>
+            ))}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filtered.length === 0 ? (
+          {sorted.length === 0 ? (
             <TableRow>
               <TableCell colSpan={cols.length + 2} className="text-center py-12 text-muted-foreground">
                 {t('Common.noData')}
               </TableCell>
             </TableRow>
           ) : (
-            filtered.map((c) => (
+            sorted.map((c) => (
               <TableRow key={c.id} className={`cursor-pointer ${selected.has(c.id) ? 'bg-primary/5' : ''}`} onClick={() => setEditing(c)}>
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleRow(c.id)} aria-label="Seleccionar" />
