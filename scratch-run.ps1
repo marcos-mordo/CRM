@@ -1,8 +1,0 @@
-﻿$env:DATABASE_URL='postgresql://brandhub:brandhub_dev_2026@localhost:5433/brandhub_fresh?schema=public'
-$env:NEXTAUTH_SECRET='dev-secret-cambiar-en-produccion-con-openssl-rand-base64-32'
-$env:AUTH_SECRET='dev-secret-cambiar-en-produccion-con-openssl-rand-base64-32'
-$env:AUTH_TRUST_HOST='true'
-$env:NEXTAUTH_URL='http://127.0.0.1:3100'
-$env:PORT='3100'
-$env:HOSTNAME='127.0.0.1'
-node 'S:\Proyectos\CRM\.next\standalone\server.js'
