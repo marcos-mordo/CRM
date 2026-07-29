@@ -12,6 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { CompanyDialog } from './company-dialog';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { BulkCompaniesBar } from './bulk-companies-bar';
 import { Building2, Edit, ExternalLink, MoreHorizontal, Search, Trash2 } from 'lucide-react';
@@ -27,9 +29,25 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Company | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<FilterCondition[]>([]);
   const [, startTransition] = useTransition();
 
   const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  // Filtros avanzados por columna
+  const filterFields: FilterField[] = [
+    { key: 'industry', label: t('Companies.industry'), type: 'text' },
+    { key: 'city', label: 'Ciudad', type: 'text' },
+    { key: 'country', label: 'País', type: 'text' },
+    { key: 'size', label: t('Companies.size'), type: 'text' },
+    { key: 'annualRevenue', label: t('Companies.annualRevenue'), type: 'number' },
+    { key: 'createdAt', label: t('Common.date'), type: 'date' },
+  ];
+  const filterAccessors: Record<string, (c: Row) => any> = {
+    industry: (c) => c.industry, city: (c) => c.city, country: (c) => c.country, size: (c) => c.size,
+    annualRevenue: (c) => (c.annualRevenue != null ? Number(c.annualRevenue) : null), createdAt: (c) => c.createdAt,
+  };
+  const filterTypes: Record<string, FilterType> = { industry: 'text', city: 'text', country: 'text', size: 'text', annualRevenue: 'number', createdAt: 'date' };
 
   const COLUMNS: { key: string; label: string; cell: (c: Row) => React.ReactNode }[] = [
     { key: 'name', label: t('Common.name'), cell: (c) => (
@@ -63,13 +81,14 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
-    if (!search) return companies;
     const q = search.toLowerCase();
     const cfMatch = (id: string) => Object.values(customFields.valuesByRow[id] ?? {}).some((v) => String(v).toLowerCase().includes(q));
-    return companies.filter(
+    const base = !search ? companies : companies.filter(
       (c) => c.name.toLowerCase().includes(q) || c.industry?.toLowerCase().includes(q) || c.city?.toLowerCase().includes(q) || cfMatch(c.id)
     );
-  }, [companies, search, customFields]);
+    return applyFilters(base, filters, filterAccessors, filterTypes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companies, search, customFields, filters]);
 
   const handleDelete = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;
@@ -101,6 +120,10 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
           <Input placeholder={t('Common.search') + '...'} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
         <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
+      </div>
+
+      <div className="px-4 py-2 border-b">
+        <FilterBar fields={filterFields} filters={filters} onChange={setFilters} />
       </div>
 
       <Table>

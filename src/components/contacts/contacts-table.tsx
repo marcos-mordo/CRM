@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { ContactForm } from './contact-form';
 import { BulkContactsBar } from './bulk-contacts-bar';
@@ -41,9 +43,26 @@ export function ContactsTable({
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Contact | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<FilterCondition[]>([]);
   const [, startTransition] = useTransition();
 
   const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  // Filtros avanzados por columna
+  const filterFields: FilterField[] = [
+    { key: 'owner', label: t('Common.owner'), type: 'select', options: users.map((u) => ({ value: u.id, label: u.name })) },
+    { key: 'company', label: t('Contacts.company'), type: 'select', options: companies.map((c) => ({ value: c.id, label: c.name })) },
+    { key: 'city', label: 'Ciudad', type: 'text' },
+    { key: 'country', label: 'País', type: 'text' },
+    { key: 'jobTitle', label: 'Cargo', type: 'text' },
+    { key: 'source', label: 'Origen', type: 'text' },
+    { key: 'createdAt', label: t('Common.date'), type: 'date' },
+  ];
+  const filterAccessors: Record<string, (c: ContactRow) => any> = {
+    owner: (c) => c.ownerId, company: (c) => c.companyId, city: (c) => c.city,
+    country: (c) => c.country, jobTitle: (c) => c.jobTitle, source: (c) => c.source, createdAt: (c) => c.createdAt,
+  };
+  const filterTypes: Record<string, FilterType> = { owner: 'select', company: 'select', city: 'text', country: 'text', jobTitle: 'text', source: 'text', createdAt: 'date' };
 
   // Definición de columnas: etiqueta + cómo se renderiza cada celda.
   const COLUMNS: { key: string; label: string; cell: (c: ContactRow) => React.ReactNode; className?: string }[] = [
@@ -81,10 +100,9 @@ export function ContactsTable({
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
-    if (!search) return contacts;
     const q = search.toLowerCase();
     const cfMatch = (id: string) => Object.values(customFields.valuesByRow[id] ?? {}).some((v) => String(v).toLowerCase().includes(q));
-    return contacts.filter(
+    const base = !search ? contacts : contacts.filter(
       (c) =>
         c.firstName.toLowerCase().includes(q) ||
         c.lastName.toLowerCase().includes(q) ||
@@ -93,7 +111,9 @@ export function ContactsTable({
         c.company?.name.toLowerCase().includes(q) ||
         cfMatch(c.id)
     );
-  }, [contacts, search, customFields]);
+    return applyFilters(base, filters, filterAccessors, filterTypes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contacts, search, customFields, filters]);
 
   const handleDelete = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;
@@ -132,6 +152,10 @@ export function ContactsTable({
           />
         </div>
         <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
+      </div>
+
+      <div className="px-4 py-2 border-b">
+        <FilterBar fields={filterFields} filters={filters} onChange={setFilters} />
       </div>
 
       <Table>
