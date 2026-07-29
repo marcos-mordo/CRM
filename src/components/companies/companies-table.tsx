@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { CompanyDialog } from './company-dialog';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
+import { BulkCompaniesBar } from './bulk-companies-bar';
 import { Building2, Edit, ExternalLink, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { deleteCompany } from '@/app/(dashboard)/companies/actions';
@@ -24,7 +26,10 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Company | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
+
+  const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const COLUMNS: { key: string; label: string; cell: (c: Row) => React.ReactNode }[] = [
     { key: 'name', label: t('Common.name'), cell: (c) => (
@@ -78,8 +83,17 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
     });
   };
 
+  const allSelected = filtered.length > 0 && filtered.every((c) => selected.has(c.id));
+  const toggleAll = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allSelected) filtered.forEach((c) => n.delete(c.id));
+    else filtered.forEach((c) => n.add(c.id));
+    return n;
+  });
+
   return (
     <>
+      {selected.size > 0 && <BulkCompaniesBar ids={[...selected]} onClear={() => setSelected(new Set())} />}
       <div className="p-4 border-b flex items-center justify-between gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -91,13 +105,17 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10"><Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Seleccionar todo" /></TableHead>
             {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((c) => (
-            <TableRow key={c.id} className="cursor-pointer" onClick={() => setEditing(c)}>
+            <TableRow key={c.id} className={`cursor-pointer ${selected.has(c.id) ? 'bg-primary/5' : ''}`} onClick={() => setEditing(c)}>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                <Checkbox checked={selected.has(c.id)} onCheckedChange={() => toggleRow(c.id)} aria-label="Seleccionar" />
+              </TableCell>
               {cols.map((col) => <TableCell key={col.key}>{col.cell(c)}</TableCell>)}
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>

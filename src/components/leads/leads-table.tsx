@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { LeadDialog } from './lead-dialog';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
+import { BulkLeadsBar } from './bulk-leads-bar';
 import { ArrowRightCircle, Edit, MoreHorizontal, Search, Sparkles, Trash2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { convertLead, deleteLead } from '@/app/(dashboard)/leads/actions';
@@ -34,7 +36,10 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [editing, setEditing] = useState<Lead | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [, startTransition] = useTransition();
+
+  const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
   const COLUMNS: { key: string; label: string; cell: (l: Row) => React.ReactNode }[] = [
     { key: 'name', label: t('Common.name'), cell: (l) => (<><p className="font-medium">{l.firstName} {l.lastName}</p>{l.email && <p className="text-xs text-muted-foreground">{l.email}</p>}</>) },
@@ -125,8 +130,17 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
     });
   };
 
+  const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
+  const toggleAll = () => setSelected((s) => {
+    const n = new Set(s);
+    if (allSelected) filtered.forEach((l) => n.delete(l.id));
+    else filtered.forEach((l) => n.add(l.id));
+    return n;
+  });
+
   return (
     <>
+      {selected.size > 0 && <BulkLeadsBar ids={[...selected]} users={users} onClear={() => setSelected(new Set())} />}
       <div className="p-4 border-b flex items-center gap-3 flex-wrap">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -153,13 +167,17 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10"><Checkbox checked={allSelected} onCheckedChange={toggleAll} aria-label="Seleccionar todo" /></TableHead>
             {cols.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
             <TableHead className="w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.map((l) => (
-            <TableRow key={l.id} className="cursor-pointer" onClick={() => setEditing(l)}>
+            <TableRow key={l.id} className={`cursor-pointer ${selected.has(l.id) ? 'bg-primary/5' : ''}`} onClick={() => setEditing(l)}>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                <Checkbox checked={selected.has(l.id)} onCheckedChange={() => toggleRow(l.id)} aria-label="Seleccionar" />
+              </TableCell>
               {cols.map((col) => <TableCell key={col.key}>{col.cell(l)}</TableCell>)}
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
