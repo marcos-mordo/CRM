@@ -37,6 +37,7 @@ async function main() {
   } else {
     // Auto-recuperación de un cluster antiguo no-UTF8 (ver db-start.js).
     let Client: any;
+    // @ts-ignore -- 'pg' no trae tipos; este script no se empaqueta con la app
     try { Client = (await import('pg')).Client; } catch { /* pg no disponible */ }
     if (Client) {
       let enc: string | null = null;
