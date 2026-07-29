@@ -51,6 +51,7 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
     { key: 'source', label: t('Leads.source'), type: 'text' },
     { key: 'owner', label: t('Common.owner'), type: 'select', options: users.map((u) => ({ value: u.id, label: u.name })) },
     { key: 'createdAt', label: t('Common.date'), type: 'date' },
+    ...customFields.fields.map((f) => ({ key: `cf_${f.key}`, label: f.label, type: 'text' as FilterType })),
   ];
   const filterAccessors: Record<string, (l: Row) => any> = {
     score: (l) => l.score,
@@ -58,8 +59,12 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
     source: (l) => l.source,
     owner: (l) => l.ownerId,
     createdAt: (l) => l.createdAt,
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, (l: Row) => customFields.valuesByRow[l.id]?.[f.key]])),
   };
-  const filterTypes: Record<string, FilterType> = { score: 'number', estimatedValue: 'number', source: 'text', owner: 'select', createdAt: 'date' };
+  const filterTypes: Record<string, FilterType> = {
+    score: 'number', estimatedValue: 'number', source: 'text', owner: 'select', createdAt: 'date',
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, 'text' as FilterType])),
+  };
 
   const COLUMNS: { key: string; label: string; cell: (l: Row) => React.ReactNode }[] = [
     { key: 'name', label: t('Common.name'), cell: (l) => (<><p className="font-medium">{l.firstName} {l.lastName}</p>{l.email && <p className="text-xs text-muted-foreground">{l.email}</p>}</>) },

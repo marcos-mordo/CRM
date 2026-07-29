@@ -42,12 +42,17 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
     { key: 'size', label: t('Companies.size'), type: 'text' },
     { key: 'annualRevenue', label: t('Companies.annualRevenue'), type: 'number' },
     { key: 'createdAt', label: t('Common.date'), type: 'date' },
+    ...customFields.fields.map((f) => ({ key: `cf_${f.key}`, label: f.label, type: 'text' as FilterType })),
   ];
   const filterAccessors: Record<string, (c: Row) => any> = {
     industry: (c) => c.industry, city: (c) => c.city, country: (c) => c.country, size: (c) => c.size,
     annualRevenue: (c) => (c.annualRevenue != null ? Number(c.annualRevenue) : null), createdAt: (c) => c.createdAt,
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, (c: Row) => customFields.valuesByRow[c.id]?.[f.key]])),
   };
-  const filterTypes: Record<string, FilterType> = { industry: 'text', city: 'text', country: 'text', size: 'text', annualRevenue: 'number', createdAt: 'date' };
+  const filterTypes: Record<string, FilterType> = {
+    industry: 'text', city: 'text', country: 'text', size: 'text', annualRevenue: 'number', createdAt: 'date',
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, 'text' as FilterType])),
+  };
 
   const COLUMNS: { key: string; label: string; cell: (c: Row) => React.ReactNode }[] = [
     { key: 'name', label: t('Common.name'), cell: (c) => (

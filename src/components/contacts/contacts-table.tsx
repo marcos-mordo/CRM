@@ -48,7 +48,7 @@ export function ContactsTable({
 
   const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  // Filtros avanzados por columna
+  // Filtros avanzados por columna (incluye campos personalizados como texto)
   const filterFields: FilterField[] = [
     { key: 'owner', label: t('Common.owner'), type: 'select', options: users.map((u) => ({ value: u.id, label: u.name })) },
     { key: 'company', label: t('Contacts.company'), type: 'select', options: companies.map((c) => ({ value: c.id, label: c.name })) },
@@ -57,12 +57,17 @@ export function ContactsTable({
     { key: 'jobTitle', label: 'Cargo', type: 'text' },
     { key: 'source', label: 'Origen', type: 'text' },
     { key: 'createdAt', label: t('Common.date'), type: 'date' },
+    ...customFields.fields.map((f) => ({ key: `cf_${f.key}`, label: f.label, type: 'text' as FilterType })),
   ];
   const filterAccessors: Record<string, (c: ContactRow) => any> = {
     owner: (c) => c.ownerId, company: (c) => c.companyId, city: (c) => c.city,
     country: (c) => c.country, jobTitle: (c) => c.jobTitle, source: (c) => c.source, createdAt: (c) => c.createdAt,
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, (c: ContactRow) => customFields.valuesByRow[c.id]?.[f.key]])),
   };
-  const filterTypes: Record<string, FilterType> = { owner: 'select', company: 'select', city: 'text', country: 'text', jobTitle: 'text', source: 'text', createdAt: 'date' };
+  const filterTypes: Record<string, FilterType> = {
+    owner: 'select', company: 'select', city: 'text', country: 'text', jobTitle: 'text', source: 'text', createdAt: 'date',
+    ...Object.fromEntries(customFields.fields.map((f) => [`cf_${f.key}`, 'text' as FilterType])),
+  };
 
   // Definición de columnas: etiqueta + cómo se renderiza cada celda.
   const COLUMNS: { key: string; label: string; cell: (c: ContactRow) => React.ReactNode; className?: string }[] = [
