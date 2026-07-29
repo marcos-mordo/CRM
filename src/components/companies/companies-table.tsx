@@ -65,10 +65,11 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   const filtered = useMemo(() => {
     if (!search) return companies;
     const q = search.toLowerCase();
+    const cfMatch = (id: string) => Object.values(customFields.valuesByRow[id] ?? {}).some((v) => String(v).toLowerCase().includes(q));
     return companies.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.industry?.toLowerCase().includes(q) || c.city?.toLowerCase().includes(q)
+      (c) => c.name.toLowerCase().includes(q) || c.industry?.toLowerCase().includes(q) || c.city?.toLowerCase().includes(q) || cfMatch(c.id)
     );
-  }, [companies, search]);
+  }, [companies, search, customFields]);
 
   const handleDelete = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;

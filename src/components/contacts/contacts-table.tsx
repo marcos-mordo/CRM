@@ -83,15 +83,17 @@ export function ContactsTable({
   const filtered = useMemo(() => {
     if (!search) return contacts;
     const q = search.toLowerCase();
+    const cfMatch = (id: string) => Object.values(customFields.valuesByRow[id] ?? {}).some((v) => String(v).toLowerCase().includes(q));
     return contacts.filter(
       (c) =>
         c.firstName.toLowerCase().includes(q) ||
         c.lastName.toLowerCase().includes(q) ||
         c.email?.toLowerCase().includes(q) ||
         c.phone?.toLowerCase().includes(q) ||
-        c.company?.name.toLowerCase().includes(q)
+        c.company?.name.toLowerCase().includes(q) ||
+        cfMatch(c.id)
     );
-  }, [contacts, search]);
+  }, [contacts, search, customFields]);
 
   const handleDelete = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;

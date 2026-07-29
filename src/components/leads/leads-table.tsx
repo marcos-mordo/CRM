@@ -70,16 +70,18 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
       if (statusFilter !== 'ALL' && l.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
+        const cfMatch = Object.values(customFields.valuesByRow[l.id] ?? {}).some((v) => String(v).toLowerCase().includes(q));
         return (
           l.firstName.toLowerCase().includes(q) ||
           l.lastName.toLowerCase().includes(q) ||
           l.email?.toLowerCase().includes(q) ||
-          l.company?.toLowerCase().includes(q)
+          l.company?.toLowerCase().includes(q) ||
+          cfMatch
         );
       }
       return true;
     });
-  }, [leads, search, statusFilter]);
+  }, [leads, search, statusFilter, customFields]);
 
   const handleDelete = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;
