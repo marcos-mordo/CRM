@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,29 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
   const [result, setResult] = useState<Result | null>(null);
 
   const entity = entities.find((e) => e.key === entityKey)!;
+
+  // Validación previa: cuántas de las filas a importar cumplen los obligatorios
+  const validation = useMemo(() => {
+    if (!preview) return null;
+    const required = entity.fields.filter((f) => f.required);
+    const unmappedRequired = required.filter((f) => !mapping[f.key]);
+    const idx = new Map(preview.headers.map((h, j) => [h, j]));
+    let ready = 0;
+    for (const row of preview.rows) {
+      const ok = required.every((f) => {
+        const col = mapping[f.key];
+        if (!col) return false;
+        const v = row[idx.get(col)!];
+        return v != null && String(v).trim() !== '';
+      });
+      if (ok) ready++;
+    }
+    return {
+      unmappedRequired: unmappedRequired.map((f) => f.label),
+      ready,
+      skipped: preview.rows.length - ready,
+    };
+  }, [preview, mapping, entity]);
 
   const onFile = (file: File) => {
     const fd = new FormData();
@@ -143,7 +166,7 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
                   <tr>{entity.fields.filter((f) => mapping[f.key]).map((f) => <th key={f.key} className="text-left p-2 font-medium">{f.label}</th>)}</tr>
                 </thead>
                 <tbody>
-                  {preview.rows.slice(0, 3).map((row, i) => {
+                  {preview.rows.slice(0, 5).map((row, i) => {
                     const idx = new Map(preview.headers.map((h, j) => [h, j]));
                     return (
                       <tr key={i} className="border-t">
@@ -157,11 +180,30 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
               </table>
             </div>
 
+            {/* Validación previa */}
+            {validation && (
+              <div className={`rounded-md border p-3 text-sm ${validation.unmappedRequired.length > 0 ? 'border-destructive/40 bg-destructive/5' : validation.skipped > 0 ? 'border-amber-500/40 bg-amber-500/5' : 'border-emerald-500/40 bg-emerald-500/5'}`}>
+                {validation.unmappedRequired.length > 0 ? (
+                  <p className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-4 w-4" /> Faltan campos obligatorios por mapear: <strong>{validation.unmappedRequired.join(', ')}</strong>
+                  </p>
+                ) : (
+                  <p className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span><strong>{validation.ready}</strong> filas listas para importar
+                      {validation.skipped > 0 && <span className="text-amber-600"> · {validation.skipped} se omitirán (falta algún obligatorio)</span>}
+                    </span>
+                  </p>
+                )}
+                {preview.truncated && <p className="text-xs text-muted-foreground mt-1">Se importarán las primeras {preview.rows.length} filas de {preview.total}.</p>}
+              </div>
+            )}
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={reset}><ArrowLeft className="h-4 w-4" /> Atrás</Button>
-              <Button onClick={doImport} disabled={pending}>
+              <Button onClick={doImport} disabled={pending || (validation?.unmappedRequired.length ?? 0) > 0 || (validation?.ready ?? 0) === 0}>
                 {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                Importar {preview.total} filas
+                Importar {validation?.ready ?? preview.rows.length} filas
               </Button>
             </div>
           </CardContent>
