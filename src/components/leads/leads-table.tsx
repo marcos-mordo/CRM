@@ -12,6 +12,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { LeadDialog } from './lead-dialog';
 import { ColumnsMenu } from '@/components/ui/columns-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { FilterBar } from '@/components/ui/filter-bar';
+import { applyFilters, type FilterCondition, type FilterField, type FilterType } from '@/lib/table-filters';
 import { useColumnPrefs } from '@/hooks/use-column-prefs';
 import { BulkLeadsBar } from './bulk-leads-bar';
 import { ArrowRightCircle, Edit, MoreHorizontal, Search, Sparkles, Trash2 } from 'lucide-react';
@@ -37,9 +39,27 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [editing, setEditing] = useState<Lead | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<FilterCondition[]>([]);
   const [, startTransition] = useTransition();
 
   const toggleRow = (id: string) => setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  // Filtros avanzados por columna
+  const filterFields: FilterField[] = [
+    { key: 'score', label: t('Leads.score'), type: 'number' },
+    { key: 'estimatedValue', label: t('Leads.estimatedValue'), type: 'number' },
+    { key: 'source', label: t('Leads.source'), type: 'text' },
+    { key: 'owner', label: t('Common.owner'), type: 'select', options: users.map((u) => ({ value: u.id, label: u.name })) },
+    { key: 'createdAt', label: t('Common.date'), type: 'date' },
+  ];
+  const filterAccessors: Record<string, (l: Row) => any> = {
+    score: (l) => l.score,
+    estimatedValue: (l) => (l.estimatedValue != null ? Number(l.estimatedValue) : null),
+    source: (l) => l.source,
+    owner: (l) => l.ownerId,
+    createdAt: (l) => l.createdAt,
+  };
+  const filterTypes: Record<string, FilterType> = { score: 'number', estimatedValue: 'number', source: 'text', owner: 'select', createdAt: 'date' };
 
   const COLUMNS: { key: string; label: string; cell: (l: Row) => React.ReactNode }[] = [
     { key: 'name', label: t('Common.name'), cell: (l) => (<><p className="font-medium">{l.firstName} {l.lastName}</p>{l.email && <p className="text-xs text-muted-foreground">{l.email}</p>}</>) },
@@ -66,7 +86,7 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
-    return leads.filter((l) => {
+    const base = leads.filter((l) => {
       if (statusFilter !== 'ALL' && l.status !== statusFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -81,7 +101,9 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
       }
       return true;
     });
-  }, [leads, search, statusFilter, customFields]);
+    return applyFilters(base, filters, filterAccessors, filterTypes);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [leads, search, statusFilter, customFields, filters]);
 
   const handleDelete = (id: string) => {
     if (!confirm(t('Common.confirmDelete'))) return;
@@ -164,6 +186,10 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
           <Sparkles className="h-3.5 w-3.5" /> Puntuar con AI
         </Button>
         <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
+      </div>
+
+      <div className="px-4 py-2 border-b">
+        <FilterBar fields={filterFields} filters={filters} onChange={setFilters} />
       </div>
 
       <Table>
