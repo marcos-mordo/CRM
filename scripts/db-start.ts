@@ -34,6 +34,33 @@ async function main() {
   if (isFirstRun) {
     console.log(`Creando base de datos '${DATABASE}'...`);
     await pg.createDatabase(DATABASE);
+  } else {
+    // Auto-recuperación de un cluster antiguo no-UTF8 (ver db-start.js).
+    let Client: any;
+    try { Client = (await import('pg')).Client; } catch { /* pg no disponible */ }
+    if (Client) {
+      let enc: string | null = null;
+      const c = new Client({ host: 'localhost', port: PORT, user: USER, password: PASSWORD, database: 'postgres' });
+      try {
+        await c.connect();
+        const r = await c.query('SHOW server_encoding');
+        enc = r.rows[0] && r.rows[0].server_encoding;
+      } catch (e: any) {
+        console.log('[db-start] no se pudo verificar el encoding:', e.message);
+      } finally { try { await c.end(); } catch {} }
+      console.log('[db-start] encoding del cluster:', enc);
+      if (enc && String(enc).toUpperCase() !== 'UTF8') {
+        console.log('[db-start] ⚠ cluster con encoding', enc, '(instalación antigua). Recreando limpio en UTF-8...');
+        try { await pg.stop(); } catch {}
+        const backup = DATA_DIR + '.legacy-' + Date.now();
+        try { fs.renameSync(DATA_DIR, backup); }
+        catch { try { fs.rmSync(DATA_DIR, { recursive: true, force: true }); } catch {} }
+        await pg.initialise();
+        await pg.start();
+        try { await pg.createDatabase(DATABASE); } catch (e: any) { console.log('[db-start] createDatabase:', e.message); }
+        console.log('[db-start] ✓ cluster recreado en UTF-8.');
+      }
+    }
   }
 
   console.log('');
