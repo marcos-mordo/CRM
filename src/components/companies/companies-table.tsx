@@ -59,7 +59,7 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   ];
   const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.companies.v1', allKeys, builtInKeys);
+  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.companies.v1', allKeys, builtInKeys);
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
@@ -99,7 +99,7 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder={t('Common.search') + '...'} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
-        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} />
+        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
       </div>
 
       <Table>

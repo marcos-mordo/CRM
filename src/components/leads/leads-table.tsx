@@ -62,7 +62,7 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   ];
   const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.leads.v1', allKeys, builtInKeys);
+  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.leads.v1', allKeys, builtInKeys);
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {
@@ -161,7 +161,7 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
         <Button size="sm" variant="outline" onClick={handleScoreAll} className="text-purple-600 border-purple-300">
           <Sparkles className="h-3.5 w-3.5" /> Puntuar con AI
         </Button>
-        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} />
+        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
       </div>
 
       <Table>

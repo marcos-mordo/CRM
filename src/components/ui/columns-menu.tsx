@@ -1,14 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { SlidersHorizontal, ChevronUp, ChevronDown, RotateCcw, Check } from 'lucide-react';
+import { SlidersHorizontal, ChevronUp, ChevronDown, RotateCcw, Check, Bookmark, Trash2, Plus } from 'lucide-react';
 
 export interface ColumnDef { key: string; label: string }
 
 /**
- * Menú reutilizable para elegir y ordenar las columnas visibles de una tabla.
- * El estado vive en el padre (normalmente vía useColumnPrefs).
+ * Menú reutilizable para elegir y ordenar las columnas visibles de una tabla,
+ * y guardar/aplicar "vistas de columnas" con nombre. El estado vive en el
+ * padre (normalmente vía useColumnPrefs).
  */
 export function ColumnsMenu({
   columns,
@@ -16,15 +19,26 @@ export function ColumnsMenu({
   onToggle,
   onMove,
   onReset,
+  views = {},
+  onSaveView,
+  onApplyView,
+  onDeleteView,
 }: {
   columns: ColumnDef[];
   visible: string[];
   onToggle: (key: string) => void;
   onMove: (key: string, dir: -1 | 1) => void;
   onReset: () => void;
+  views?: Record<string, string[]>;
+  onSaveView?: (name: string) => void;
+  onApplyView?: (name: string) => void;
+  onDeleteView?: (name: string) => void;
 }) {
   const label = (key: string) => columns.find((c) => c.key === key)?.label ?? key;
   const hidden = columns.filter((c) => !visible.includes(c.key));
+  const [newView, setNewView] = useState('');
+  const viewNames = Object.keys(views);
+  const supportsViews = !!onSaveView;
 
   return (
     <DropdownMenu>
@@ -66,6 +80,35 @@ export function ColumnsMenu({
                 <span className="truncate">{c.label}</span>
               </button>
             ))}
+          </>
+        )}
+
+        {/* Vistas de columnas con nombre */}
+        {supportsViews && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="flex items-center gap-1.5 text-xs"><Bookmark className="h-3 w-3" /> Vistas guardadas</DropdownMenuLabel>
+            {viewNames.length === 0 && <p className="px-2 py-1 text-xs text-muted-foreground">Aún no has guardado ninguna.</p>}
+            {viewNames.map((name) => (
+              <div key={name} className="flex items-center gap-1 px-2 py-1 text-sm">
+                <button onClick={() => onApplyView?.(name)} className="flex-1 text-left truncate hover:text-primary">{name}</button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDeleteView?.(name)}>
+                  <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                </Button>
+              </div>
+            ))}
+            <div className="flex items-center gap-1 px-2 py-1.5" onKeyDown={(e) => e.stopPropagation()}>
+              <Input
+                value={newView}
+                onChange={(e) => setNewView(e.target.value)}
+                placeholder="Nombre de la vista"
+                className="h-7 text-xs"
+                onKeyDown={(e) => { if (e.key === 'Enter' && newView.trim()) { onSaveView?.(newView); setNewView(''); } }}
+              />
+              <Button size="icon" className="h-7 w-7 shrink-0" disabled={!newView.trim()} onClick={() => { onSaveView?.(newView); setNewView(''); }}>
+                <Plus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </>
         )}
       </DropdownMenuContent>

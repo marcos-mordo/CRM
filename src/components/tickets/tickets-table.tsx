@@ -98,7 +98,7 @@ export function TicketsTable({ tickets, users, sla = {} }: { tickets: Row[]; use
     { key: 'date', label: t('Common.date'), cell: (tk) => <span className="text-sm text-muted-foreground">{formatDate(tk.createdAt)}</span> },
   ];
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset } = useColumnPrefs('cols.tickets.v1', allKeys);
+  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.tickets.v1', allKeys);
   const cols = (hydrated ? visible : allKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   return (
@@ -115,7 +115,7 @@ export function TicketsTable({ tickets, users, sla = {} }: { tickets: Row[]; use
             </Button>
           ))}
         </div>
-        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} />
+        <ColumnsMenu columns={COLUMNS.map((c) => ({ key: c.key, label: c.label }))} visible={cols.map((c) => c.key)} onToggle={toggle} onMove={move} onReset={reset} views={views} onSaveView={saveView} onApplyView={applyView} onDeleteView={deleteView} />
       </div>
 
       <Table>
