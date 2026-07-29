@@ -13,7 +13,7 @@ interface Field { key: string; label: string; required?: boolean; }
 interface EntityDef { key: string; label: string; fields: Field[]; }
 
 interface Preview { headers: string[]; rows: string[][]; total: number; truncated: boolean; mapping: Record<string, string>; }
-interface Result { created: number; skipped: number; errors: string[]; }
+interface Result { created: number; updated: number; skipped: number; errors: string[]; }
 
 const NONE = '__none__';
 
@@ -24,6 +24,7 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
   const [entityKey, setEntityKey] = useState(entities[0].key);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [updateExisting, setUpdateExisting] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
   const entity = entities.find((e) => e.key === entityKey)!;
@@ -68,15 +69,15 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
     if (!preview) return;
     startTransition(async () => {
       try {
-        const r = await runImport(entityKey, mapping, preview.headers, preview.rows);
+        const r = await runImport(entityKey, mapping, preview.headers, preview.rows, { updateExisting });
         setResult(r);
         setStep(3);
-        if (r.created > 0) toast.success(`${r.created} registros importados`);
+        if (r.created > 0 || r.updated > 0) toast.success(`${r.created} creados · ${r.updated} actualizados`);
       } catch (e: any) { toast.error(e.message); }
     });
   };
 
-  const reset = () => { setStep(1); setPreview(null); setMapping({}); setResult(null); };
+  const reset = () => { setStep(1); setPreview(null); setMapping({}); setResult(null); setUpdateExisting(false); };
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -199,6 +200,15 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
               </div>
             )}
 
+            {/* Modo ante duplicados */}
+            <label className="flex items-start gap-2.5 rounded-md border p-3 cursor-pointer text-sm">
+              <input type="checkbox" checked={updateExisting} onChange={(e) => setUpdateExisting(e.target.checked)} className="h-4 w-4 mt-0.5" />
+              <span>
+                <span className="font-medium">Actualizar los registros que ya existen</span>
+                <span className="block text-xs text-muted-foreground">Si un registro coincide (por email, nombre, SKU o DNI/CIF), se actualizan sus datos con los del fichero en vez de omitirlo. Los campos vacíos del fichero no borran los existentes.</span>
+              </span>
+            </label>
+
             <div className="flex justify-between">
               <Button variant="outline" onClick={reset}><ArrowLeft className="h-4 w-4" /> Atrás</Button>
               <Button onClick={doImport} disabled={pending || (validation?.unmappedRequired.length ?? 0) > 0 || (validation?.ready ?? 0) === 0}>
@@ -215,7 +225,7 @@ export function ImportWizard({ entities }: { entities: EntityDef[] }) {
           <CardContent className="p-8 space-y-4 text-center">
             <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto" />
             <div>
-              <p className="text-2xl font-bold">{result.created} importados</p>
+              <p className="text-2xl font-bold">{result.created} creados{result.updated > 0 ? ` · ${result.updated} actualizados` : ''}</p>
               {result.skipped > 0 && <p className="text-sm text-muted-foreground">{result.skipped} omitidos (ya existían)</p>}
             </div>
             {result.errors.length > 0 && (

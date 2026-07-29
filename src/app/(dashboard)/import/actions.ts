@@ -32,7 +32,8 @@ export async function runImport(
   entity: string,
   mapping: Record<string, string>,
   headers: string[],
-  rows: string[][]
+  rows: string[][],
+  opts?: { updateExisting?: boolean }
 ) {
   const session = await requireAuth();
   const def = IMPORTS[entity];
@@ -53,7 +54,7 @@ export async function runImport(
     return rec;
   });
 
-  const result = await def.run(session.user.organizationId, mapped);
+  const result = await def.run(session.user.organizationId, mapped, opts);
   revalidatePath(`/${entity}`);
   return result;
 }
