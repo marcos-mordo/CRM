@@ -33,12 +33,30 @@ function patchNonEmpty(patch: Record<string, any>, entries: Record<string, any>)
 
 const num = (v: string | undefined): number | null => {
   if (!v) return null;
-  const n = Number(String(v).replace(/[^0-9,.-]/g, '').replace(',', '.'));
+  let s = String(v).trim().replace(/[^0-9.,-]/g, '');
+  if (s === '') return null;
+  const hasDot = s.includes('.');
+  const hasComma = s.includes(',');
+  if (hasDot && hasComma) {
+    // El último separador es el decimal: "1.500,50" (es) o "1,500.50" (en)
+    s = s.lastIndexOf(',') > s.lastIndexOf('.')
+      ? s.replace(/\./g, '').replace(',', '.')
+      : s.replace(/,/g, '');
+  } else if (hasComma) {
+    s = s.replace(',', '.'); // "1500,50"
+  }
+  const n = Number(s);
   return isNaN(n) ? null : n;
 };
 const str = (v: string | undefined): string | null => {
   const s = (v ?? '').trim();
   return s === '' ? null : s;
+};
+const date = (v: string | undefined): Date | null => {
+  const s = (v ?? '').trim();
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
 };
 
 export const IMPORTS: Record<string, ImportDef> = {
@@ -182,6 +200,75 @@ export const IMPORTS: Record<string, ImportDef> = {
         created++;
       }
       return { created, updated, skipped, errors };
+    },
+  },
+
+  deals: {
+    label: 'Oportunidades',
+    fields: [
+      { key: 'title', label: 'Oportunidad', required: true, aliases: ['titulo', 'título', 'nombre', 'name', 'deal', 'opportunity', 'asunto'] },
+      { key: 'amount', label: 'Importe', type: 'number', aliases: ['importe', 'amount', 'valor', 'value', 'monto'] },
+      { key: 'currency', label: 'Moneda', aliases: ['moneda', 'currency', 'divisa'] },
+      { key: 'company', label: 'Empresa', aliases: ['empresa', 'company', 'cuenta', 'account'] },
+      { key: 'contactEmail', label: 'Email del contacto', aliases: ['email', 'correo', 'contacto', 'contact'] },
+      { key: 'probability', label: 'Probabilidad %', type: 'number', aliases: ['probabilidad', 'probability', 'prob'] },
+      { key: 'expectedCloseDate', label: 'Cierre previsto', aliases: ['cierre', 'fecha cierre', 'close date', 'expected close', 'closing date'] },
+      { key: 'source', label: 'Origen', aliases: ['origen', 'source'] },
+    ],
+    run: async (orgId, rows) => {
+      const errors: string[] = [];
+      // Pipeline por defecto (o el primero) + su primera etapa
+      const pipeline =
+        (await prisma.pipeline.findFirst({ where: { organizationId: orgId, isDefault: true }, include: { stages: { orderBy: { order: 'asc' }, take: 1 } } })) ??
+        (await prisma.pipeline.findFirst({ where: { organizationId: orgId }, include: { stages: { orderBy: { order: 'asc' }, take: 1 } } }));
+      if (!pipeline || pipeline.stages.length === 0) {
+        return { created: 0, updated: 0, skipped: 0, errors: ['No hay un pipeline con etapas configurado para importar oportunidades'] };
+      }
+      const stageId = pipeline.stages[0].id;
+
+      // Resolver empresas por nombre (match o crear)
+      const valid = rows.filter((r) => !!str(r.title));
+      const companyNames = [...new Set(valid.map((r) => str(r.company)).filter(Boolean) as string[])];
+      const companyIdByName = new Map<string, string>();
+      if (companyNames.length > 0) {
+        const found = await prisma.company.findMany({ where: { organizationId: orgId }, select: { id: true, name: true } });
+        for (const c of found) companyIdByName.set(c.name.toLowerCase(), c.id);
+        for (const name of companyNames.filter((n) => !companyIdByName.has(n.toLowerCase()))) {
+          const created = await prisma.company.create({ data: { name, organizationId: orgId }, select: { id: true, name: true } });
+          companyIdByName.set(created.name.toLowerCase(), created.id);
+        }
+      }
+      // Resolver contactos por email (solo match, no crear)
+      const contactByEmail = new Map<string, string>();
+      (await prisma.contact.findMany({ where: { organizationId: orgId, email: { not: null } }, select: { id: true, email: true } }))
+        .forEach((c) => contactByEmail.set(c.email!.toLowerCase(), c.id));
+
+      let created = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        const title = str(r.title);
+        if (!title) { errors.push(`Fila ${i + 2}: falta el título de la oportunidad`); continue; }
+        const companyName = str(r.company);
+        const email = str(r.contactEmail);
+        await prisma.deal.create({
+          data: {
+            title,
+            amount: num(r.amount) ?? 0,
+            currency: str(r.currency) ?? 'EUR',
+            probability: Math.min(100, Math.max(0, Math.round(num(r.probability) ?? 0))),
+            status: 'OPEN',
+            expectedCloseDate: date(r.expectedCloseDate),
+            source: str(r.source),
+            pipelineId: pipeline.id,
+            stageId,
+            companyId: companyName ? companyIdByName.get(companyName.toLowerCase()) ?? null : null,
+            contactId: email ? contactByEmail.get(email.toLowerCase()) ?? null : null,
+            organizationId: orgId,
+          },
+        });
+        created++;
+      }
+      return { created, updated: 0, skipped: 0, errors };
     },
   },
 
