@@ -74,7 +74,7 @@ export function ContactsTable({
   };
 
   // Ordenación por columna
-  const { sortKey, sortDir, toggle: toggleSort } = useTableSort();
+  const { sortKey, sortDir, toggle: toggleSort, setSort } = useTableSort();
   const sortAccessors: Record<string, (c: ContactRow) => any> = {
     name: (c) => `${c.firstName} ${c.lastName}`, company: (c) => c.company?.name, email: (c) => c.email,
     phone: (c) => c.phone, mobile: (c) => c.mobile, city: (c) => c.city, owner: (c) => c.owner?.name,
@@ -114,7 +114,10 @@ export function ContactsTable({
   ];
   const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.contacts.v1', allKeys, builtInKeys);
+  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.contacts.v1', allKeys, builtInKeys, {
+    capture: () => ({ filters, sortKey, sortDir }),
+    restore: (e) => { setFilters(e?.filters ?? []); setSort(e?.sortKey ?? null, e?.sortDir ?? null); },
+  });
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {

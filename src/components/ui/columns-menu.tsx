@@ -29,7 +29,7 @@ export function ColumnsMenu({
   onToggle: (key: string) => void;
   onMove: (key: string, dir: -1 | 1) => void;
   onReset: () => void;
-  views?: Record<string, string[]>;
+  views?: Record<string, any>;
   onSaveView?: (name: string) => void;
   onApplyView?: (name: string) => void;
   onDeleteView?: (name: string) => void;
@@ -101,7 +101,7 @@ export function ColumnsMenu({
               <Input
                 value={newView}
                 onChange={(e) => setNewView(e.target.value)}
-                placeholder="Nombre de la vista"
+                placeholder="Guardar vista (columnas + filtros)"
                 className="h-7 text-xs"
                 onKeyDown={(e) => { if (e.key === 'Enter' && newView.trim()) { onSaveView?.(newView); setNewView(''); } }}
               />

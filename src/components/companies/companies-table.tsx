@@ -59,7 +59,7 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   };
 
   // Ordenación por columna
-  const { sortKey, sortDir, toggle: toggleSort } = useTableSort();
+  const { sortKey, sortDir, toggle: toggleSort, setSort } = useTableSort();
   const sortAccessors: Record<string, (c: Row) => any> = {
     name: (c) => c.name, industry: (c) => c.industry, size: (c) => c.size, city: (c) => c.city,
     contacts: (c) => c._count.contacts, deals: (c) => c._count.deals,
@@ -95,7 +95,10 @@ export function CompaniesTable({ companies, customFields = { fields: [], valuesB
   ];
   const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.companies.v1', allKeys, builtInKeys);
+  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.companies.v1', allKeys, builtInKeys, {
+    capture: () => ({ filters, sortKey, sortDir }),
+    restore: (e) => { setFilters(e?.filters ?? []); setSort(e?.sortKey ?? null, e?.sortDir ?? null); },
+  });
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {

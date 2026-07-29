@@ -71,7 +71,7 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   };
 
   // Ordenación por columna
-  const { sortKey, sortDir, toggle: toggleSort } = useTableSort();
+  const { sortKey, sortDir, toggle: toggleSort, setSort } = useTableSort();
   const sortAccessors: Record<string, (l: Row) => any> = {
     name: (l) => `${l.firstName} ${l.lastName}`, company: (l) => l.company, status: (l) => l.status,
     score: (l) => l.score, value: (l) => (l.estimatedValue != null ? Number(l.estimatedValue) : null),
@@ -100,7 +100,10 @@ export function LeadsTable({ leads, users, customFields = { fields: [], valuesBy
   ];
   const builtInKeys = COLUMNS.filter((c) => !c.key.startsWith('cf_')).map((c) => c.key);
   const allKeys = COLUMNS.map((c) => c.key);
-  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.leads.v1', allKeys, builtInKeys);
+  const { visible, hydrated, toggle, move, reset, views, saveView, applyView, deleteView } = useColumnPrefs('cols.leads.v1', allKeys, builtInKeys, {
+    capture: () => ({ filters, sortKey, sortDir }),
+    restore: (e) => { setFilters(e?.filters ?? []); setSort(e?.sortKey ?? null, e?.sortDir ?? null); },
+  });
   const cols = (hydrated ? visible : builtInKeys).map((k) => COLUMNS.find((c) => c.key === k)!).filter(Boolean);
 
   const filtered = useMemo(() => {

@@ -2,31 +2,38 @@
 
 import { useEffect, useState } from 'react';
 
+interface SavedView { cols: string[]; extra?: any }
+
 /**
  * Preferencias de columnas de una tabla, persistidas por usuario en
  * localStorage (por dispositivo, sin migración de BD, funciona offline).
  * Devuelve el array ORDENADO de claves visibles y un setter.
  *
  * `allKeys` es el orden canónico por defecto (todas visibles).
+ * `viewExtras` (opcional) permite que una "vista guardada" recuerde también
+ * estado adicional de la tabla (p.ej. filtros y orden): capture() lo lee al
+ * guardar y restore() lo aplica al cargar la vista.
  */
-export function useColumnPrefs(storageKey: string, allKeys: string[], defaultVisible?: string[]): {
+export function useColumnPrefs(
+  storageKey: string,
+  allKeys: string[],
+  defaultVisible?: string[],
+  viewExtras?: { capture: () => any; restore: (extra: any) => void },
+): {
   visible: string[];
   hydrated: boolean;
   toggle: (key: string) => void;
   move: (key: string, dir: -1 | 1) => void;
   reset: () => void;
-  views: Record<string, string[]>;
+  views: Record<string, SavedView>;
   saveView: (name: string) => void;
   applyView: (name: string) => void;
   deleteView: (name: string) => void;
 } {
-  // Columnas mostradas de inicio (por defecto todas). Sirve para tener
-  // columnas disponibles en el menú pero ocultas hasta que el usuario las active
-  // (p.ej. campos personalizados).
   const initial = defaultVisible ?? allKeys;
   const [visible, setVisible] = useState<string[]>(initial);
   const [hydrated, setHydrated] = useState(false);
-  const [views, setViews] = useState<Record<string, string[]>>({});
+  const [views, setViews] = useState<Record<string, SavedView>>({});
   const viewsKey = `${storageKey}.views`;
 
   useEffect(() => {
@@ -34,18 +41,25 @@ export function useColumnPrefs(storageKey: string, allKeys: string[], defaultVis
       const raw = localStorage.getItem(storageKey);
       if (raw) {
         const saved: string[] = JSON.parse(raw);
-        // Solo claves que aún existen; conserva el orden guardado.
         const clean = saved.filter((k) => allKeys.includes(k));
         if (clean.length > 0) setVisible(clean);
       }
       const rawViews = localStorage.getItem(viewsKey);
-      if (rawViews) setViews(JSON.parse(rawViews));
+      if (rawViews) {
+        const parsed = JSON.parse(rawViews);
+        // Compat: formato antiguo = Record<string, string[]>
+        const norm: Record<string, SavedView> = {};
+        for (const [name, val] of Object.entries(parsed)) {
+          norm[name] = Array.isArray(val) ? { cols: val } : (val as SavedView);
+        }
+        setViews(norm);
+      }
     } catch { /* localStorage no disponible */ }
     setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
 
-  const persistViews = (next: Record<string, string[]>) => {
+  const persistViews = (next: Record<string, SavedView>) => {
     setViews(next);
     try { localStorage.setItem(viewsKey, JSON.stringify(next)); } catch { /* noop */ }
   };
@@ -60,7 +74,6 @@ export function useColumnPrefs(storageKey: string, allKeys: string[], defaultVis
       if (visible.length === 1) return; // deja siempre al menos una columna
       persist(visible.filter((k) => k !== key));
     } else {
-      // Reinserta respetando el orden canónico
       const next = allKeys.filter((k) => visible.includes(k) || k === key);
       persist(next);
     }
@@ -77,16 +90,17 @@ export function useColumnPrefs(storageKey: string, allKeys: string[], defaultVis
 
   const reset = () => persist(initial);
 
-  // Vistas de columnas con nombre (guardadas por tabla en localStorage)
+  // Vistas con nombre: columnas + estado extra (filtros/orden) opcional
   const saveView = (name: string) => {
     const n = name.trim();
     if (!n) return;
-    persistViews({ ...views, [n]: visible });
+    persistViews({ ...views, [n]: { cols: visible, extra: viewExtras?.capture() } });
   };
   const applyView = (name: string) => {
-    const cols = views[name];
-    if (!cols) return;
-    persist(cols.filter((k) => allKeys.includes(k)));
+    const v = views[name];
+    if (!v) return;
+    persist(v.cols.filter((k) => allKeys.includes(k)));
+    if (viewExtras && v.extra !== undefined) viewExtras.restore(v.extra);
   };
   const deleteView = (name: string) => {
     const next = { ...views };

@@ -5,7 +5,11 @@ import type { SortDir } from '@/lib/sort-rows';
 
 /** Estado de ordenación de una tabla: clave activa + dirección. Al clicar una
  *  cabecera se cicla asc → desc → sin orden. */
-export function useTableSort(): { sortKey: string | null; sortDir: SortDir; toggle: (key: string) => void } {
+export function useTableSort(): {
+  sortKey: string | null; sortDir: SortDir;
+  toggle: (key: string) => void;
+  setSort: (key: string | null, dir: SortDir) => void;
+} {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>(null);
 
@@ -16,5 +20,7 @@ export function useTableSort(): { sortKey: string | null; sortDir: SortDir; togg
     setSortDir('asc');
   };
 
-  return { sortKey, sortDir, toggle };
+  const setSort = (key: string | null, dir: SortDir) => { setSortKey(key); setSortDir(dir); };
+
+  return { sortKey, sortDir, toggle, setSort };
 }
