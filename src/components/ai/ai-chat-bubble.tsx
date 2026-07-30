@@ -69,14 +69,14 @@ export function AiChatBubble({ enabled }: { enabled: boolean }) {
         </button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
-        <SheetTitle className="sr-only">Asistente AI</SheetTitle>
+        <SheetTitle className="sr-only">Asistente BrandHub</SheetTitle>
         <div className="border-b p-4 flex items-center gap-3 bg-gradient-to-br from-purple-500/10 to-pink-500/10">
           <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shadow">
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
             <p className="font-semibold">Asistente BrandHub</p>
-            <p className="text-xs text-muted-foreground">Pregúntale sobre tus datos · Claude</p>
+            <p className="text-xs text-muted-foreground">Pregúntale sobre tus datos</p>
           </div>
         </div>
 

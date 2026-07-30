@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const session = await requireAuth();
   if (!isAIConfigured()) {
     return NextResponse.json(
-      { error: 'ai_not_configured', message: 'ANTHROPIC_API_KEY no está configurada' },
+      { error: 'ai_not_configured', message: 'AI_API_KEY no está configurada' },
       { status: 503 }
     );
   }

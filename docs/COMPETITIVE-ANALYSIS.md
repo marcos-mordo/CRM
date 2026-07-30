@@ -26,7 +26,7 @@
 | Cotizaciones, facturas, productos, PDF | ✅ | Zoho |
 | Campañas email + A/B + tracking pixel + secuencias drip | ✅ | HubSpot Starter |
 | Web forms embebibles → lead automático | ✅ | HubSpot |
-| Lead scoring con IA + asistente conversacional con tools | ✅ | Einstein/Zia (mejor: usa Claude) |
+| Lead scoring con IA + asistente conversacional con tools | ✅ | Einstein/Zia (mejor: IA propia integrada) |
 | Tickets + base de conocimiento | ✅ | Zoho Desk básico |
 | Goals/quotas + ranking + forecast pesado | ✅ | Salesforce básico |
 | Time tracking integrado | ✅ | Ninguno lo trae de serie |
@@ -58,7 +58,7 @@
 
 - Pipedrive-simple en UX, HubSpot-completo en features
 - Único con modo local real (RGPD-friendly, sin cuota mensual obligatoria)
-- IA de serie (Claude) sin addon de pago
+- IA de serie sin addon de pago
 - Vertical único: agencias multi-marca con comisiones automáticas
 
 ## 4. Roadmap de cierre de brechas

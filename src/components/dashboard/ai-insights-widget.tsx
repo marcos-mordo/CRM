@@ -36,8 +36,8 @@ export function AiInsightsWidget({ enabled }: { enabled: boolean }) {
             </div>
             <div>
               <CardTitle className="text-base flex items-center gap-2">
-                Asistente AI
-                <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">Claude</span>
+                Asistente BrandHub
+                <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">IA</span>
               </CardTitle>
               <CardDescription className="text-xs">Insights y sugerencias basadas en tus datos de este mes</CardDescription>
             </div>
@@ -52,7 +52,7 @@ export function AiInsightsWidget({ enabled }: { enabled: boolean }) {
       <CardContent>
         {!enabled ? (
           <p className="text-xs text-muted-foreground">
-            Asistente AI no está configurado. Añade <code>ANTHROPIC_API_KEY</code> en variables de entorno para activarlo.
+            Asistente BrandHub no está configurado. Añade <code>AI_API_KEY</code> en variables de entorno para activarlo.
           </p>
         ) : !insights ? (
           <div className="text-center py-2">

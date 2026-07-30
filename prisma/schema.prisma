@@ -309,7 +309,7 @@ model Lead {
   @@index([ownerId])
 }
 
-// Score AI calculado por Claude
+// Score AI calculado por el motor de IA
 model LeadScore {
   id          String   @id @default(cuid())
   probability Int      // 0-100

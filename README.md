@@ -25,7 +25,7 @@ varias marcas y venden sus servicios a clientes finales.
 - **2FA TOTP** (otpauth + qrcode + backup codes)
 - **Tailwind CSS** + **shadcn/ui**
 - **Stripe** (checkout + webhook)
-- **Anthropic Claude** (asistente conversacional con tool use, scoring de leads)
+- **Motor de IA integrado** (asistente conversacional con tool use, scoring de leads)
 - **@react-pdf/renderer** (contratos + reportes ejecutivos)
 - **Nodemailer** (transaccionales + campañas con tracking pixel)
 - **Electron** + **electron-updater** (desktop con auto-update)
@@ -143,7 +143,7 @@ docker compose up -d --build
 - Tickets con estados, prioridades, asignación
 - Base de conocimiento
 
-### IA (Claude)
+### IA
 - **Asistente conversacional** flotante con tool use:
   resumen ventas, ranking reps/marcas, comisiones pendientes,
   búsqueda clientes, leads sin actividad
@@ -216,7 +216,7 @@ NEXTAUTH_SECRET=cambia-esto-por-algo-random
 
 Opcional según feature:
 ```
-ANTHROPIC_API_KEY=sk-ant-xxx           # AI chat + scoring
+AI_API_KEY=sk-xxx                      # AI chat + scoring
 STRIPE_SECRET_KEY=sk_live_xxx          # billing
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 GOOGLE_CLIENT_ID=...                   # SSO
@@ -253,7 +253,7 @@ src/
 │   └── ai/                    # chat bubble
 ├── lib/
 │   ├── prisma.ts, auth.ts, auth.config.ts
-│   ├── ai.ts                  # Claude + tool use
+│   ├── ai.ts                  # motor de IA + tool use
 │   ├── stripe.ts, telegram.ts, mailer.ts
 │   ├── webhooks.ts, notifications.ts
 │   ├── public-share.ts        # HMAC tokens venta compartida

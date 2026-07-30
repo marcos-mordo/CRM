@@ -7,7 +7,7 @@ import { isAIConfigured, scoreLead } from '@/lib/ai';
 
 export async function scoreLeadAction(leadId: string) {
   const session = await requireAuth();
-  if (!isAIConfigured()) throw new Error('AI no configurada (ANTHROPIC_API_KEY)');
+  if (!isAIConfigured()) throw new Error('AI no configurada (AI_API_KEY)');
 
   const lead = await prisma.lead.findFirstOrThrow({
     where: { id: leadId, organizationId: session.user.organizationId },

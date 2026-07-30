@@ -1,13 +1,16 @@
-import Anthropic from '@anthropic-ai/sdk';
+import AISDK from '@anthropic-ai/sdk';
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-export const isAIConfigured = () => !!ANTHROPIC_API_KEY;
+// Motor de IA de BrandHub. La clave del proveedor se lee de AI_API_KEY.
+const AI_API_KEY = process.env.AI_API_KEY;
+// Modelo por defecto del asistente (rápido y económico).
+const AI_MODEL = 'claude-haiku-4-5-20251001';
+export const isAIConfigured = () => !!AI_API_KEY;
 
-let _client: Anthropic | null = null;
-function getClient(): Anthropic {
+let _client: AISDK | null = null;
+function getClient(): AISDK {
   if (_client) return _client;
-  if (!ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY no configurada');
-  _client = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  if (!AI_API_KEY) throw new Error('AI_API_KEY no configurada');
+  _client = new AISDK({ apiKey: AI_API_KEY });
   return _client;
 }
 
@@ -82,7 +85,7 @@ export async function scoreLead(ctx: LeadScoreContext): Promise<{ probability: n
 - Notas: ${ctx.notes ?? '(sin notas)'}`;
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: AI_MODEL,
     max_tokens: 400,
     system: [{ type: 'text', text: LEAD_SCORE_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: prompt }],
@@ -323,7 +326,7 @@ export async function chatWithAssistant(orgId: string, history: { role: 'user' |
   // Hasta 5 rondas de tool use
   for (let round = 0; round < 5; round++) {
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: AI_MODEL,
       max_tokens: 800,
       system: [{ type: 'text', text: CHAT_SYSTEM, cache_control: { type: 'ephemeral' } }],
       tools: TOOLS as any,
@@ -360,7 +363,7 @@ ${ctx.topBrand ? `- Marca con más ventas: ${ctx.topBrand.name} (${ctx.topBrand.
 Dame insights y sugerencias.`;
 
   const response = await client.messages.create({
-    model: 'claude-haiku-4-5-20251001',
+    model: AI_MODEL,
     max_tokens: 600,
     system: [
       {
