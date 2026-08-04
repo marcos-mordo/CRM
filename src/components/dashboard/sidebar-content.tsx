@@ -35,6 +35,7 @@ import {
   Upload,
   Activity,
   Sun,
+  Repeat,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/brand-logo';
@@ -84,6 +85,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         { href: '/end-customers', icon: UserCheck, labelKey: 'endCustomers' },
         { href: '/sales-orders', icon: Handshake, labelKey: 'sales' },
         { href: '/commissions', icon: Wallet, labelKey: 'commissions' },
+        { href: '/recurring-revenue', icon: Repeat, labelKey: 'recurringRevenue' },
         { href: '/contract-templates', icon: FileText, labelKey: 'contractTemplates' },
       ],
     },
